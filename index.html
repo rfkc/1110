@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr" data-theme="rose">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>11:10</title>
+  <meta name="description" content="Nos 11:10, jour après jour.">
+
+  <!-- iPhone : app plein écran une fois ajoutée à l'écran d'accueil -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="11:10">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#FBF5F2">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+
+  <!-- Polices : Fraunces (l'heure, les titres) et Quicksand (le texte) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Quicksand:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Applique le thème choisi tout de suite, pour éviter un flash de couleur -->
+  <script>
+    try { var t = localStorage.getItem('1110.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="app">
+    <p class="test-banner" id="test-banner" hidden></p>
+
+    <main id="main">
+      <!-- ============ Accueil ============ -->
+      <section class="screen active" id="screen-home" aria-label="Accueil">
+        <p class="date" id="home-date"></p>
+        <div class="clock" id="home-clock">--:--</div>
+        <p class="sub" id="home-count"></p>
+
+        <div class="card bday" id="bday" hidden>
+          <svg class="bday-heart" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.6 2.9 4.5 6.8 4.5c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.9 0 5.9 4.1 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>
+          <p class="bday-title">Bon anniv ma vie</p>
+          <p class="bday-sub">gros bisous JTM</p>
+        </div>
+
+        <div class="home-bottom">
+          <button class="big-btn" id="btn-1110" type="button"></button>
+          <p class="hint" id="home-hint">une seule fois par jour</p>
+          <button class="link" id="btn-undo" type="button" hidden>annuler</button>
+        </div>
+      </section>
+
+      <!-- ============ Calendrier ============ -->
+      <section class="screen" id="screen-calendar" aria-label="Calendrier">
+        <div class="cal-head">
+          <button class="icon-btn" id="cal-prev" type="button" aria-label="Mois précédent">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <h2 id="cal-title"></h2>
+          <button class="icon-btn" id="cal-next" type="button" aria-label="Mois suivant">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="cal-grid weekdays" aria-hidden="true">
+          <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div class="cal-grid" id="cal-days"></div>
+        <div class="card detail" id="cal-detail"></div>
+        <p class="hint">Appui long sur un jour pour l'ajouter ou le modifier</p>
+      </section>
+
+      <!-- ============ Stats ============ -->
+      <section class="screen" id="screen-stats" aria-label="Statistiques">
+        <h2 class="title">Nos 11:10</h2>
+        <div class="card stat">
+          <span class="label">Total</span>
+          <strong id="st-total"></strong>
+        </div>
+        <div class="stat-grid">
+          <div class="card stat"><span class="label">Série en cours</span><strong id="st-streak"></strong></div>
+          <div class="card stat"><span class="label">Meilleure série</span><strong id="st-best"></strong></div>
+          <div class="card stat"><span class="label">Ce mois-ci</span><strong id="st-month"></strong></div>
+          <div class="card stat"><span class="label">Meilleur mois</span><strong id="st-bestmonth"></strong><span class="small" id="st-bestmonth-label"></span></div>
+        </div>
+        <div class="card stat">
+          <span class="label" id="st-pct-label">Depuis le premier 11:10</span>
+          <strong id="st-pct"></strong>
+          <span class="small">des jours ont eu leur 11:10</span>
+        </div>
+      </section>
+
+      <!-- ============ Réglages ============ -->
+      <section class="screen" id="screen-settings" aria-label="Réglages">
+        <h2 class="title">Réglages</h2>
+
+        <h3>Couleurs</h3>
+        <div class="themes" id="themes"></div>
+
+        <h3>Sauvegarde</h3>
+        <p class="note">Tes 11:10 sont gardés uniquement sur ce téléphone. Exporte-les de temps en temps (par exemple dans Fichiers ou par mail), pour ne rien perdre si tu changes de téléphone.</p>
+        <div class="settings-actions">
+          <button class="btn" id="btn-export" type="button">Exporter mes données</button>
+          <button class="btn" id="btn-import" type="button">Importer</button>
+          <input type="file" id="file-import" accept=".json,application/json" hidden>
+        </div>
+
+        <p class="version">11:10 · version <span id="app-version">–</span></p>
+      </section>
+    </main>
+
+    <!-- ============ Barre d'onglets ============ -->
+    <nav class="tabbar" aria-label="Navigation">
+      <button class="tab active" data-screen="home" type="button">
+        <!-- une horloge… arrêtée sur 11:10 -->
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12l-1.6-4.4M12 12l4.2-2.3"/></svg>
+        <span>Accueil</span>
+      </button>
+      <button class="tab" data-screen="calendar" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        <span>Calendrier</span>
+      </button>
+      <button class="tab" data-screen="stats" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-5"/></svg>
+        <span>Stats</span>
+      </button>
+      <button class="tab" data-screen="settings" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        <span>Réglages</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Pluie de cœurs -->
+  <div id="hearts" aria-hidden="true"></div>
+
+  <!-- Petit message en bas de l'écran -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Fenêtre de confirmation (annuler, ajouter un jour…) -->
+  <dialog id="dialog">
+    <form method="dialog" class="dialog-inner">
+      <h3 id="dialog-title"></h3>
+      <p id="dialog-text"></p>
+      <label class="time-wrap" id="dialog-time-wrap" hidden>
+        <input type="time" id="dialog-time">
+      </label>
+      <div class="dialog-actions" id="dialog-actions"></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
