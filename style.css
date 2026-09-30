@@ -11,17 +11,17 @@
 [data-theme="sauge"]   { --bg:#F4F6F0; --card:#FFFFFF; --btn:#86AD92; --soft:#CFE0D2; --ink:#1F3326; --mute:#4C6B55; --ring:#5E8C6A; --brd:#DDE5D8; }
 [data-theme="ciel"]    { --bg:#F2F6FB; --card:#FFFFFF; --btn:#7FAEE3; --soft:#C9DEF5; --ink:#042C53; --mute:#185FA5; --ring:#378ADD; --brd:#DAE5F1; }
 
-:root { --danger:#B3261E; --on-btn:#FFFFFF; color-scheme: light dark; }
+:root { --danger:#B3261E; --on-btn:#FFFFFF; color-scheme: light; }
 
-/* ---------- Thèmes (sombre, automatique) ---------- */
-@media (prefers-color-scheme: dark) {
-  [data-theme="rose"]    { --bg:#221A1E; --card:#33272D; --btn:#C9607F; --soft:#72243E; --ink:#F4C0D1; --mute:#ED93B1; --ring:#ED93B1; --brd:#3A2D33; }
-  [data-theme="lavande"] { --bg:#1C1A26; --card:#2B2839; --btn:#7F77DD; --soft:#3C3489; --ink:#CECBF6; --mute:#AFA9EC; --ring:#AFA9EC; --brd:#33304A; }
-  [data-theme="peche"]   { --bg:#241B17; --card:#362821; --btn:#D8704A; --soft:#712B13; --ink:#F5C4B3; --mute:#F0997B; --ring:#F0997B; --brd:#3F2F27; }
-  [data-theme="sauge"]   { --bg:#1A201C; --card:#28302A; --btn:#6E9C7A; --soft:#34523D; --ink:#CFE0D2; --mute:#9CC0A5; --ring:#9CC0A5; --brd:#2F3A32; }
-  [data-theme="ciel"]    { --bg:#151B24; --card:#232D3B; --btn:#378ADD; --soft:#0C447C; --ink:#B5D4F4; --mute:#85B7EB; --ring:#85B7EB; --brd:#2A3647; }
-  :root { --danger:#F2B8B5; }
-}
+/* ---------- Thèmes (sombre) ----------
+   Actifs quand <html> porte l'attribut data-dark :
+   choix « Sombre » dans les Réglages, ou iPhone en mode sombre avec « Auto » (voir app.js). */
+[data-dark][data-theme="rose"]    { --bg:#221A1E; --card:#33272D; --btn:#C9607F; --soft:#72243E; --ink:#F4C0D1; --mute:#ED93B1; --ring:#ED93B1; --brd:#3A2D33; }
+[data-dark][data-theme="lavande"] { --bg:#1C1A26; --card:#2B2839; --btn:#7F77DD; --soft:#3C3489; --ink:#CECBF6; --mute:#AFA9EC; --ring:#AFA9EC; --brd:#33304A; }
+[data-dark][data-theme="peche"]   { --bg:#241B17; --card:#362821; --btn:#D8704A; --soft:#712B13; --ink:#F5C4B3; --mute:#F0997B; --ring:#F0997B; --brd:#3F2F27; }
+[data-dark][data-theme="sauge"]   { --bg:#1A201C; --card:#28302A; --btn:#6E9C7A; --soft:#34523D; --ink:#CFE0D2; --mute:#9CC0A5; --ring:#9CC0A5; --brd:#2F3A32; }
+[data-dark][data-theme="ciel"]    { --bg:#151B24; --card:#232D3B; --btn:#378ADD; --soft:#0C447C; --ink:#B5D4F4; --mute:#85B7EB; --ring:#85B7EB; --brd:#2A3647; }
+:root[data-dark] { --danger:#F2B8B5; color-scheme: dark; }
 
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }
@@ -219,6 +219,27 @@ main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* ---------- Réglages ---------- */
 .screen h3 { font-size: 19px; margin: 18px 0 10px; }
+
+/* Apparence : Auto / Clair / Sombre */
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--card);
+}
+.mode-btn {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--mute);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background-color .2s, color .2s;
+}
+.mode-btn.selected { background: var(--btn); color: var(--on-btn); }
 
 .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .theme-btn {

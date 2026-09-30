@@ -5,7 +5,7 @@
    ⚠️ À CHAQUE MODIFICATION DE L'APP : augmenter VERSION (v1 → v2 → v3…).
    Sinon l'iPhone continue d'afficher l'ancienne version gardée en cache.
    ============================================================ */
-const VERSION = 'v2';
+const VERSION = 'v3';
 
 const CACHE = '1110-' + VERSION;
 const FONT_CACHE = '1110-polices';

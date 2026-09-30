@@ -14,6 +14,7 @@ const TEST_DAY = /^\d{4}-\d{2}-\d{2}$/.test(params.get('jour') || '') ? params.g
 // Format : { "2026-10-11": "11:10:42", "2026-10-12": null }  (null = ajouté à la main, sans heure)
 const STORAGE_KEY = TEST_DAY ? '1110.test.days' : '1110.days';
 const THEME_KEY = '1110.theme';
+const MODE_KEY = '1110.mode';          // 'auto' (suit l'iPhone), 'light' ou 'dark'
 const BDAY_SHOWN_KEY = '1110.bday.';   // + année : la grosse pluie de cœurs a déjà eu lieu
 const BIRTHDAY = { month: 10, day: 11 };
 
@@ -23,6 +24,12 @@ const THEMES = [
   { id: 'peche',   name: 'Pêche',          swatch: ['#F29B76', '#FBD3BE'] },
   { id: 'sauge',   name: 'Sauge',          swatch: ['#86AD92', '#CFE0D2'] },
   { id: 'ciel',    name: "Ciel d'automne", swatch: ['#7FAEE3', '#C9DEF5'] },
+];
+
+const MODES = [
+  { id: 'auto',  name: 'Auto' },
+  { id: 'light', name: 'Clair' },
+  { id: 'dark',  name: 'Sombre' },
 ];
 
 const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.6 2.9 4.5 6.8 4.5c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.9 0 5.9 4.1 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
@@ -436,6 +443,29 @@ function setTheme(id) {
   renderSettings();
 }
 
+// Mode clair / sombre choisi dans les Réglages
+const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+
+function currentMode() {
+  let m = null;
+  try { m = localStorage.getItem(MODE_KEY); } catch (e) { /* rien */ }
+  return MODES.some(x => x.id === m) ? m : 'auto';
+}
+
+// Allume ou éteint les couleurs sombres (attribut data-dark sur <html>)
+function applyMode() {
+  const mode = currentMode();
+  const dark = mode === 'dark' || (mode === 'auto' && darkQuery.matches);
+  document.documentElement.toggleAttribute('data-dark', dark);
+  updateThemeColor();
+}
+
+function setMode(id) {
+  try { localStorage.setItem(MODE_KEY, id); } catch (e) { /* rien */ }
+  applyMode();
+  renderSettings();
+}
+
 // Couleur de la barre d'état du téléphone = couleur de fond du thème
 function updateThemeColor() {
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
@@ -444,6 +474,11 @@ function updateThemeColor() {
 }
 
 function renderSettings() {
+  const mode = currentMode();
+  $('#modes').innerHTML = MODES.map(m =>
+    '<button type="button" class="mode-btn' + (m.id === mode ? ' selected' : '') + '" data-mode-id="' + m.id + '" aria-pressed="' + (m.id === mode) + '">' + m.name + '</button>'
+  ).join('');
+
   const cur = currentTheme();
   $('#themes').innerHTML = THEMES.map(t =>
     '<button type="button" class="theme-btn' + (t.id === cur ? ' selected' : '') + '" data-theme-id="' + t.id + '" aria-pressed="' + (t.id === cur) + '">'
@@ -620,7 +655,7 @@ function start() {
   }
 
   document.documentElement.dataset.theme = currentTheme();
-  updateThemeColor();
+  applyMode();
   renderSettings();
   renderAll();
   setupLongPress();
@@ -634,6 +669,10 @@ function start() {
     const b = e.target.closest('.theme-btn');
     if (b) setTheme(b.dataset.themeId);
   });
+  $('#modes').addEventListener('click', e => {
+    const b = e.target.closest('.mode-btn');
+    if (b) setMode(b.dataset.modeId);
+  });
   $('#btn-export').addEventListener('click', exportData);
   $('#btn-import').addEventListener('click', () => $('#file-import').click());
   $('#file-import').addEventListener('change', e => {
@@ -642,8 +681,8 @@ function start() {
     e.target.value = '';
   });
 
-  // Mode sombre qui change : on met à jour la couleur de la barre d'état
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateThemeColor);
+  // L'iPhone passe en clair/sombre : on suit, si le mode « Auto » est choisi
+  darkQuery.addEventListener('change', applyMode);
 
   // Retour dans l'app (elle était en arrière-plan) : on remet tout à jour
   document.addEventListener('visibilitychange', () => {

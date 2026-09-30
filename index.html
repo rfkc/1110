@@ -23,9 +23,14 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Quicksand:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="style.css">
 
-  <!-- Applique le thème choisi tout de suite, pour éviter un flash de couleur -->
+  <!-- Applique le thème et le mode clair/sombre tout de suite, pour éviter un flash de couleur -->
   <script>
-    try { var t = localStorage.getItem('1110.theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+    (function () {
+      var root = document.documentElement, theme = null, mode = null;
+      try { theme = localStorage.getItem('1110.theme'); mode = localStorage.getItem('1110.mode'); } catch (e) {}
+      if (theme) root.dataset.theme = theme;
+      if (mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) root.setAttribute('data-dark', '');
+    })();
   </script>
 </head>
 <body>
@@ -94,6 +99,9 @@
       <!-- ============ Réglages ============ -->
       <section class="screen" id="screen-settings" aria-label="Réglages">
         <h2 class="title">Réglages</h2>
+
+        <h3>Apparence</h3>
+        <div class="modes" id="modes" role="group" aria-label="Apparence"></div>
 
         <h3>Couleurs</h3>
         <div class="themes" id="themes"></div>
