@@ -1,14 +1,16 @@
 /* ============================================================
    11:10 — service worker
-   Garde une copie de l'app sur le téléphone pour qu'elle marche hors ligne.
+   Garde une copie de l'app sur le téléphone pour qu'elle marche hors ligne,
+   tout en allant chercher la dernière version en ligne à chaque ouverture.
 
    ⚠️ À CHAQUE MODIFICATION DE L'APP : augmenter VERSION (v1 → v2 → v3…).
-   Sinon l'iPhone continue d'afficher l'ancienne version gardée en cache.
+   C'est ce qui déclenche la mise à jour (et le rechargement) de l'app installée.
    ============================================================ */
-const VERSION = 'v3';
+const VERSION = 'v4';
 
 const CACHE = '1110-' + VERSION;
 const FONT_CACHE = '1110-polices';
+const NETWORK_TIMEOUT = 3000; // au-delà, on prend la copie locale
 
 // Les fichiers de l'app, gardés dès l'installation
 const FILES = [
@@ -46,7 +48,7 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Polices Google : gardées après le premier chargement
+  // Polices Google : elles ne changent jamais, on les garde après le premier chargement
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     event.respondWith(
       caches.open(FONT_CACHE).then(cache =>
@@ -60,18 +62,39 @@ self.addEventListener('fetch', event => {
   }
 
   if (url.origin !== location.origin) return;
-
-  // Fichiers de l'app : copie locale d'abord, internet ensuite
-  event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(hit => {
-      if (hit) return hit;
-      return fetch(req).catch(() => {
-        if (req.mode === 'navigate') return caches.match('index.html');
-        return Response.error();
-      });
-    })
-  );
+  event.respondWith(networkFirst(req, url));
 });
+
+// Fichiers de l'app : internet d'abord (toujours la dernière version),
+// copie locale si pas de réseau ou réseau trop lent
+async function networkFirst(req, url) {
+  const cache = await caches.open(CACHE);
+  const key = url.origin + url.pathname; // sans le "?jour=…" du mode test
+  try {
+    // no-cache : redemande au serveur au lieu d'une copie intermédiaire de moins de 10 min
+    const res = await withTimeout(fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }), NETWORK_TIMEOUT);
+    if (res.ok) cache.put(key, res.clone());
+    return res;
+  } catch (e) {
+    const hit = await cache.match(key) || await caches.match(req, { ignoreSearch: true });
+    if (hit) return hit;
+    if (req.mode === 'navigate') {
+      const index = await cache.match('index.html');
+      if (index) return index;
+    }
+    return Response.error();
+  }
+}
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      res => { clearTimeout(timer); resolve(res); },
+      err => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
 
 // L'app demande le numéro de version (affiché dans les Réglages)
 self.addEventListener('message', event => {

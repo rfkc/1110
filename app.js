@@ -699,7 +699,15 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
 
   const hadController = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // updateViaCache: 'none' : le téléphone vérifie toujours sw.js en ligne, jamais une vieille copie
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+
+  // L'app installée reste souvent en veille : quand elle revient au premier plan,
+  // on vérifie s'il existe une nouvelle version (qui la rechargera toute seule)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    navigator.serviceWorker.getRegistration().then(reg => reg && reg.update()).catch(() => {});
+  });
 
   // Une nouvelle version vient de s'installer : on recharge une fois pour l'afficher
   let refreshing = false;
