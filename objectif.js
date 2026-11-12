@@ -76,11 +76,12 @@
       .filter(r => { const n = dayNumber(r.date); return n >= start && n <= yearEnd; })
       .map(r => ({ id: r.id, date: r.date, km: r.km, n: dayNumber(r.date) }));
 
-    const sumBetween = (from, to) => counted.reduce((acc, r) => (r.n >= from && r.n <= to ? acc + r.km : acc), 0);
-    const totalBefore = n => s.totalDepart + sumBetween(start, n - 1);
+    // arrondi au centième : 0,1 + 0,2 doit faire 0,3, pas 0,30000000000000004
+    const sumBetween = (from, to) => round(counted.reduce((acc, r) => (r.n >= from && r.n <= to ? acc + r.km : acc), 0), 2);
+    const totalBefore = n => round(s.totalDepart + sumBetween(start, n - 1), 2);
 
     // Où elle en est
-    const total = s.totalDepart + sumBetween(start, yearEnd);
+    const total = round(s.totalDepart + sumBetween(start, yearEnd), 2);
     const kmRestants = Math.max(0, s.objectif - total);
     const joursRestants = Math.max(0, yearEnd - dayRef + 1); // aujourd'hui compris
     const atteint = total >= s.objectif;
@@ -104,7 +105,7 @@
       const joursSemaine = weekEnd - weekStart + 1;
       const cible = kmRestantsLundi * joursSemaine / joursRestantsLundi;
       const faitesSemaine = counted.filter(r => r.n >= weekStart && r.n <= weekEnd);
-      const kmSemaine = faitesSemaine.reduce((acc, r) => acc + r.km, 0);
+      const kmSemaine = round(faitesSemaine.reduce((acc, r) => acc + r.km, 0), 2);
       const reste = cible - kmSemaine;
       const joursRestantsSemaine = weekEnd - today + 1;
       const sortiesRestantes = Math.max(1, Math.min(s.sortiesParSemaine - faitesSemaine.length, joursRestantsSemaine));
@@ -216,6 +217,7 @@
   }
 
   const isNum = v => typeof v === 'number' && isFinite(v);
+  const ID_RE = /^[\w-]{1,40}$/; // identifiant de sortie : lettres, chiffres, tirets (rien d'autre dans la page)
 
   function cleanSettings(r) {
     if (!r || typeof r !== 'object') return null;
@@ -235,7 +237,7 @@
     const seen = new Set();
     (Array.isArray(obj.sorties) ? obj.sorties : []).forEach(r => {
       if (!r || typeof r !== 'object') return;
-      if (typeof r.id !== 'string' || !r.id || seen.has(r.id)) return;
+      if (typeof r.id !== 'string' || !ID_RE.test(r.id) || seen.has(r.id)) return;
       if (!isValidKey(r.date) || !isNum(r.km) || r.km <= 0 || r.km > 100) return;
       seen.add(r.id);
       out.sorties.push({ id: r.id, date: r.date, km: r.km });

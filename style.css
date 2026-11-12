@@ -462,7 +462,6 @@ dialog[open] { animation: pop .25s ease-out; }
   font-variant-numeric: tabular-nums;
 }
 .o-lead em { color: var(--tone); transition: color .8s; }
-.o-lead .o-lead-sub { display: block; }
 
 .o-bar { margin: 24px 2px 0; }
 .o-track { position: relative; height: 12px; border-radius: 6px; background: color-mix(in srgb, var(--card) 75%, transparent); }
@@ -552,14 +551,13 @@ dialog[open] { animation: pop .25s ease-out; }
 .o-h-row { display: flex; align-items: baseline; justify-content: space-between; }
 .o-h-row .o-h { margin-bottom: 10px; }
 .o-all { margin: 0; padding: 10px 4px; }
-.o-chart { padding: 14px 12px 10px; }
+.o-chart { position: relative; padding: 14px 12px 10px; }
 .o-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
 .o-chart text { font: 600 10px 'Quicksand', sans-serif; fill: var(--mute); }
 .o-chart .o-me { fill: none; stroke: var(--ring); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .o-chart .o-me-area { fill: var(--soft); opacity: .5; }
 .o-chart .o-pace { fill: none; stroke: var(--mute); stroke-width: 1.5; stroke-dasharray: 4 5; opacity: .6; }
 .o-chart .o-axis { stroke: var(--brd); }
-.o-chart { position: relative; }
 .o-chart-empty { position: absolute; left: 24px; right: 24px; top: 34%; margin: 0; }
 .o-legend { display: flex; gap: 16px; margin: 8px 4px 0; font-size: 12px; font-weight: 600; color: var(--mute); }
 .o-legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -645,6 +643,9 @@ dialog[open] { animation: pop .25s ease-out; }
 .o-go:active { transform: scale(.95); }
 .o-shake { animation: o-shake .4s; }
 @keyframes o-shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+/* Le petit message passe au-dessus de la saisie rapide */
+.has-dock .toast { bottom: calc(160px + env(safe-area-inset-bottom)); }
 
 /* Clavier ouvert : on cache les onglets pour garder la saisie bien visible */
 .kb .tabbar { display: none; }
@@ -735,7 +736,7 @@ dialog[open] { animation: pop .25s ease-out; }
 
 /* ---------- Paliers ---------- */
 .o-party {
-  position: fixed; inset: 0; z-index: 55;
+  position: fixed; inset: 0; z-index: 45; /* sous la pluie de cœurs (50) */
   display: grid; place-items: center;
   padding: 24px;
   background: rgba(0, 0, 0, .3);

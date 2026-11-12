@@ -90,7 +90,9 @@ function objAfterShow(name) {
 // La saisie rapide n'apparaît que sur le Suivi (et pas une fois l'année finie)
 function updateDock() {
   const r = obj.reglages ? O.compute(obj.reglages, obj.sorties, todayKey()) : null;
-  $('#o-dock').hidden = !(view.space === '365' && view['365'] === 'obj' && r && !r.anneeFinie);
+  const show = view.space === '365' && view['365'] === 'obj' && r && !r.anneeFinie;
+  $('#o-dock').hidden = !show;
+  document.documentElement.classList.toggle('has-dock', !!show);
 }
 
 /* ============================================================
@@ -629,6 +631,13 @@ function objStart() {
     if (b) objEditRun(b.dataset.id);
   }));
   $('#o-all').addEventListener('click', () => showScreen('obj-runs'));
+  // Entrée dans « Modifier la sortie » = Enregistrer (et pas Annuler)
+  ['#dialog-km', '#dialog-date'].forEach(sel => $(sel).addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const save = $('#dialog-actions .primary');
+    if (save) save.click();
+  }));
 
   // Bienvenue
   $('#w-next').addEventListener('click', welcomeNext);

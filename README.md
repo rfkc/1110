@@ -8,9 +8,12 @@ Les données restent uniquement sur le téléphone.
 
 | Fichier | À quoi il sert |
 |---|---|
-| `index.html` | La page (les 4 écrans : Accueil, Calendrier, Stats, Réglages) |
+| `index.html` | La page : l'espace 11:10 (Accueil, Calendrier, Stats, Réglages) et l'espace Objectif 365 (Suivi, Sorties, Réglages) |
 | `style.css` | Les couleurs, les 5 thèmes, le mode sombre |
-| `app.js` | Toute la logique : le bouton, le calendrier, les stats, l'export et l'import |
+| `app.js` | La logique de 11:10 : le bouton, le calendrier, les stats, l'export et l'import, le passage d'un espace à l'autre |
+| `objectif.js` | Objectif 365 : tous les calculs (total, km/jour, semaine, projection, paliers), sans rien d'affichage |
+| `objectif-ui.js` | Objectif 365 : l'écran, la saisie des sorties, la bienvenue, les fêtes des paliers |
+| `tests/` | Les tests automatiques des calculs d'Objectif 365 (voir plus bas) |
 | `sw.js` | Le « service worker » : fait marcher l'app hors ligne. **Contient le numéro de version.** |
 | `manifest.json` | Le nom « 11:10 », l'icône, le mode plein écran |
 | `icons/` | Les icônes (celle de l'iPhone est `apple-touch-icon.png`) |
@@ -100,6 +103,18 @@ Les données ne sont **jamais** effacées par une mise à jour.
 
 Dans **Réglages → Exporter mes données**, l'iPhone ouvre la feuille de partage : **Enregistrer dans Fichiers**, AirDrop, mail… Le fichier `.json` contient tous les jours et toutes les heures.
 Sur un nouveau téléphone : installer l'app, puis **Réglages → Importer** et choisir le fichier. L'import **ajoute** les jours du fichier, il n'efface rien.
+
+## 7. Objectif 365
+
+Le deuxième espace de l'app (bouton « Objectif 365 » en haut) : 365 km de course dans l'année.
+
+- **Premier lancement** : 3 petites étapes (son total Strava et sa date, l'objectif et l'année, le nombre de sorties par semaine). Tout se change ensuite dans l'onglet Réglages de l'espace.
+- **Après chaque sortie** : elle tape les km en bas de l'écran Suivi, puis « Ajouter ». La pastille « auj. » permet de changer la date si elle a oublié une sortie.
+- **Les chiffres** : tout est recalculé à partir du total de départ et de la liste des sorties. Corriger ou supprimer une sortie (onglet Sorties) met donc tout à jour.
+- **Les données** sont dans leur propre case du téléphone (`1110.objectif365`). Celles de 11:10 ne sont jamais touchées. La sauvegarde (Exporter) contient les deux.
+- **Le message de la fête des 365 km** est dans `objectif-ui.js` (cherche « Gros bisous »).
+
+**Lancer les tests des calculs** (il faut Node, déjà installé) : dans PowerShell, dans le dossier `1110`, tape `node --test tests/`. Tout doit finir par `fail 0`.
 
 ## Les pièges iOS, et ce qui a été fait
 

@@ -287,6 +287,26 @@ test('données : nettoyage et import sans rien perdre', () => {
   assert.deepEqual(O.mergeData(O.emptyData(), d).data.reglages, S);
 });
 
+test('arrondis : 364,9 + 0,1 fait bien 365 (objectif atteint)', () => {
+  const runs = [run('2026-11-13', 69.8), run('2026-11-14', 0.1), run('2026-11-15', 0.1)];
+  const r = O.compute(S, runs, '2026-11-15');
+  assert.equal(r.total, 365);
+  assert.equal(r.atteint, true);
+  assert.equal(r.kmRestants, 0);
+  const r2 = O.compute({ ...S, totalDepart: 0 }, [run('2026-11-13', 0.1), run('2026-11-13', 0.2)], '2026-11-13');
+  assert.equal(r2.total, 0.3);
+});
+
+test('import : un identifiant de sortie bizarre est écarté', () => {
+  const d = O.cleanData({ sorties: [
+    { id: '"><img src=x onerror=alert(1)>', date: '2026-11-13', km: 5 },
+    { id: 'ok-1_a', date: '2026-11-13', km: 5 },
+    { id: '', date: '2026-11-13', km: 5 },
+  ] });
+  assert.deepEqual(d.sorties.map(r => r.id), ['ok-1_a']);
+  assert.match(O.newId(), /^[\w-]{1,40}$/);
+});
+
 test('affichage des nombres à la française', () => {
   assert.equal(O.fmtKm(5.6), '5,6');
   assert.equal(O.fmtKm(295), '295');
