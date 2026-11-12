@@ -416,7 +416,7 @@ async function objEditRun(id) {
   if (r.value === 'remove') {
     const ok = await ask({
       title: 'Supprimer cette sortie ?',
-      text: fmtKm(run.km) + ' km le ' + fmtRunDay.format(dateOf(run.date)) + '. Tous les chiffres seront recalculés.',
+      text: 'La sortie du ' + fmtRunDay.format(dateOf(run.date)) + ' (' + fmtKm(run.km) + ' km) sera retirée, et tous les chiffres recalculés.',
       buttons: [
         { label: 'Garder', value: 'keep' },
         { label: 'Supprimer', value: 'remove', style: 'danger' },
