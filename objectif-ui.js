@@ -158,7 +158,7 @@ function renderMood(r, s, today, from) {
   }
 
   // La barre et ses paliers
-  const lo = Math.max(0, Math.floor((Math.min(s.totalDepart, r.paliers[0]) - 15) / 10) * 10);
+  const lo = O.barStart(s);
   const hi = Math.max(s.objectif, r.total);
   const pos = km => Math.max(0, Math.min(100, (km - lo) / (hi - lo) * 100));
   const p = pos(r.total) + '%';
@@ -167,7 +167,7 @@ function renderMood(r, s, today, from) {
 
   // on garde les paliers assez espacés pour rester lisibles (l'objectif d'abord)
   const shown = [];
-  r.paliers.slice().reverse().forEach(m => {
+  r.paliers.filter(m => m >= lo).reverse().forEach(m => {
     if (shown.every(x => Math.abs(pos(x) - pos(m)) >= 11)) shown.push(m);
   });
   $('#o-flags').innerHTML = shown.reverse().map(m =>
@@ -462,7 +462,7 @@ async function objEditRun(id) {
 function objCheckMilestones() {
   const s = obj.reglages;
   const r = O.compute(s, obj.sorties, todayKey());
-  const fresh = O.newMilestones(r.total, s.objectif, obj.paliersFetes);
+  const fresh = O.newMilestones(r.total, s, obj.paliersFetes);
   if (!fresh.length) return;
   obj.paliersFetes.push(...fresh);   // chacun n'est fêté qu'une fois, même après une suppression
   objSave();

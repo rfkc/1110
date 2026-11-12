@@ -242,10 +242,25 @@ test('dates de sortie : pas dans le futur, ni hors de l\'année, ni avant le dé
 test('paliers : chacun fêté une seule fois', () => {
   assert.deepEqual(O.milestones(365), [300, 333, 350, 365]);
   assert.deepEqual(O.milestones(320), [300, 320]);
-  assert.deepEqual(O.newMilestones(295, 365, []), []);
-  assert.deepEqual(O.newMilestones(301, 365, []), [300]);
-  assert.deepEqual(O.newMilestones(301, 365, [300]), []); // supprimée puis rajoutée : pas de 2e fête
-  assert.deepEqual(O.newMilestones(372, 365, [300, 333]), [350, 365]);
+  assert.deepEqual(O.newMilestones(295, S, []), []);
+  assert.deepEqual(O.newMilestones(301, S, []), [300]);
+  assert.deepEqual(O.newMilestones(301, S, [300]), []); // supprimée puis rajoutée : pas de 2e fête
+  assert.deepEqual(O.newMilestones(372, S, [300, 333]), [350, 365]);
+});
+
+test('objectif de 1000 km : un palier tous les 100 km, sans fêter ceux déjà dépassés', () => {
+  const R = { ...S, totalDepart: 838.9, objectif: 1000 };
+  assert.deepEqual(O.milestones(1000), [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
+  assert.deepEqual(O.milestones(550), [100, 200, 300, 400, 500, 550]);
+  assert.deepEqual(O.newMilestones(845, R, []), []);          // 800 était déjà passé au départ
+  assert.deepEqual(O.newMilestones(901, R, []), [900]);
+  assert.deepEqual(O.newMilestones(1001, R, [900]), [1000]);
+  assert.equal(O.barStart(R), 790);
+  assert.equal(O.barStart(S), 280); // la barre de 365 ne change pas
+  const r = O.compute(R, [], '2026-11-12');
+  assert.equal(O.fmtKmJour(r.kmParJour), '3,22');
+  assert.equal(r.ecart, -24.1);
+  assert.equal(O.fmtKm(r.semaine.cible), '12,9');
 });
 
 test('courbe : part du total Strava et suit la ligne « 1 km/jour »', () => {

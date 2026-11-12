@@ -54,9 +54,14 @@
     };
   }
 
-  // Paliers fêtés : 300, 333 et 350 (s'ils sont sous l'objectif), puis l'objectif lui-même
+  // Paliers fêtés, puis l'objectif lui-même :
+  // - objectif de 500 km ou plus : tous les 100 km (100, 200… 900, 1000)
+  // - sinon : 300, 333 et 350 (s'ils sont sous l'objectif)
   function milestones(objectif) {
-    return [300, 333, 350].filter(m => m < objectif).concat([objectif]);
+    const list = [];
+    if (objectif >= 500) for (let m = 100; m < objectif; m += 100) list.push(m);
+    else [300, 333, 350].forEach(m => { if (m < objectif) list.push(m); });
+    return list.concat([objectif]);
   }
 
   /* ---------- Le calcul principal ---------- */
@@ -169,9 +174,17 @@
   }
 
   /* ---------- Paliers à fêter ---------- */
-  // Ceux qu'on vient d'atteindre et qui n'ont jamais été fêtés
-  function newMilestones(total, objectif, dejaFetes) {
-    return milestones(objectif).filter(m => total >= m && !dejaFetes.includes(m));
+  // Ceux qu'on vient d'atteindre, jamais fêtés, et pas déjà dépassés au départ
+  function newMilestones(total, settings, dejaFetes) {
+    return milestones(settings.objectif)
+      .filter(m => m > settings.totalDepart && total >= m && !dejaFetes.includes(m));
+  }
+
+  // Début de la barre de progression : juste avant le total de départ (ou le 1er palier à venir)
+  function barStart(settings) {
+    const next = milestones(settings.objectif).find(m => m > settings.totalDepart) || settings.objectif;
+    const margin = settings.objectif * 0.04;
+    return Math.max(0, Math.floor((Math.min(settings.totalDepart, next) - margin) / 10) * 10);
   }
 
   /* ---------- Saisie ---------- */
@@ -271,7 +284,7 @@
 
   return {
     keyOf, dayNumber, keyOfNumber, isValidKey, weekday, daysInYear,
-    defaultSettings, milestones, compute, curve, newMilestones,
+    defaultSettings, milestones, compute, curve, newMilestones, barStart,
     parseKm, checkDate, MESSAGES,
     emptyData, cleanData, cleanSettings, mergeData, newId,
     fmtKm, fmtKmJour,
