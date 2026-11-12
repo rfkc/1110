@@ -6,7 +6,7 @@
    ⚠️ À CHAQUE MODIFICATION DE L'APP : augmenter VERSION (v1 → v2 → v3…).
    C'est ce qui déclenche la mise à jour (et le rechargement) de l'app installée.
    ============================================================ */
-const VERSION = 'v11';
+const VERSION = 'v12';
 
 const CACHE = '1110-' + VERSION;
 const FONT_CACHE = '1110-polices';
@@ -64,6 +64,9 @@ self.addEventListener('fetch', event => {
   }
 
   if (url.origin !== location.origin) return;
+  // Icônes et manifeste : on laisse l'iPhone les charger lui-même, sans intermédiaire
+  // (« Sur l'écran d'accueil » les recharge, et doit toujours obtenir la vraie image)
+  if (url.pathname.includes('/icons/') || url.pathname.endsWith('manifest.json')) return;
   event.respondWith(networkFirst(req, url));
 });
 
