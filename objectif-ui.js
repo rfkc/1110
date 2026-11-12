@@ -460,12 +460,15 @@ async function objEditRun(id) {
 /* ============================================================
    Trophées : les fêtes (moyenne, ou grande pour l'objectif et « 1 km par jour »)
    ============================================================ */
-const CAT_LABEL = { course: 'Course mythique', symbole: 'Symbolique', trajet: 'Trajet depuis Grenoble', europe: 'Voyage en Europe', secret: 'Trophée secret', regulier: 'Palier', objectif: 'Objectif' };
+const CAT_LABEL = { exploit: 'Exploit', course: 'Course mythique', symbole: 'Symbolique', trajet: 'Voyage', europe: 'Voyage en Europe', secret: 'Trophée secret', regulier: 'Palier', objectif: 'Objectif' };
+
+// Les trophées réservés à Alix n'existent que si 11:10 est débloqué
+const objOpts = () => ({ alix: isUnlocked() });
+const kmTxt = t => (t.km === null ? '' : fmtKm(t.km) + ' km');
 
 function objCheckMilestones() {
   const s = obj.reglages;
-  const r = O.compute(s, obj.sorties, todayKey());
-  const fresh = O.newTrophies(r.total, s, obj.paliersFetes);
+  const fresh = O.newTrophies(s, obj.sorties, todayKey(), obj.paliersFetes, objOpts());
   if (!fresh.length) return;
   obj.paliersFetes.push(...fresh.map(t => t.id)); // chacun n'est fêté qu'une fois, même après une suppression
   objSave();
@@ -486,19 +489,19 @@ function celebrate(list) {
   if (main.id === 'objectif') {
     text = 'Tu l’as fait ! ' + fmtKm(s.objectif) + ' km en ' + s.annee + '. Chaque sortie compte, et tu les as toutes faites.';
     if (s.objectif === O.daysInYear(s.annee)) text += ' 1 km pour chaque jour de l’année !';
-    text += ' Gros bisous ma vie ♥';
+    text += isUnlocked() ? ' Gros bisous ma vie ♥' : ' Bravo !';
   }
 
   $('#o-party-kicker').textContent = others.length ? (others.length + 1) + ' trophées débloqués !'
     : main.id === 'objectif' ? 'Objectif ' + s.annee : CAT_LABEL[main.cat];
   $('#o-party-icon').textContent = main.icon;
-  $('#o-party-title').textContent = main.cat === 'regulier' || main.cat === 'objectif' || main.cat === 'symbole'
+  $('#o-party-title').textContent = main.km !== null && (main.cat === 'regulier' || main.cat === 'objectif' || main.cat === 'symbole')
     ? fmtKm(main.km) + ' km' : main.name;
   $('#o-party-text').textContent = text;
 
   const shown = others.slice(0, 4);
   $('#o-party-list').innerHTML = shown.map(t =>
-    '<li><span aria-hidden="true">' + t.icon + '</span><b>' + t.name + '</b><em>' + fmtKm(t.km) + ' km</em></li>'
+    '<li><span aria-hidden="true">' + t.icon + '</span><b>' + t.name + '</b><em>' + kmTxt(t) + '</em></li>'
   ).join('') + (others.length > shown.length
     ? '<li class="more">+ ' + (others.length - shown.length) + ' autre' + (others.length - shown.length > 1 ? 's' : '') + ' à découvrir dans Trophées</li>' : '');
   $('#o-party-list').hidden = !others.length;
@@ -510,18 +513,22 @@ function celebrate(list) {
 }
 
 /* ---------- L'onglet Trophées ---------- */
-const TR_SECTIONS = [
-  ['course', 'Courses mythiques'],
-  ['symbole', 'Symboliques'],
-  ['trajet', 'Trajets depuis Grenoble'],
-  ['europe', 'Europe depuis Grenoble'],
-  ['secret', 'Secrets'],
-];
+function trSections(s) {
+  const ville = O.VILLES[s.ville] ? s.ville : O.DEFAULT_VILLE;
+  return [
+    ['exploit', 'Exploits'],
+    ['course', 'Courses mythiques'],
+    ['symbole', 'Symboliques'],
+    ['trajet', 'Voyages depuis ' + ville],
+    ['europe', 'Europe depuis ' + ville],
+    ['secret', 'Secrets'],
+  ];
+}
 
 function trophyState(t, total, dates) {
   const d = dates[t.id];
-  if (total >= t.km) return { on: true, sub: d === 'depart' ? 'au départ' : d ? 'le ' + fmtDayMonth.format(dateOf(d)) : '' };
-  return { on: false, sub: 'encore ' + fmtKm(t.km - total) + ' km' };
+  if (d) return { on: true, sub: d === 'depart' ? 'au départ' : 'le ' + fmtDayMonth.format(dateOf(d)) };
+  return { on: false, sub: t.km === null ? 'à débloquer' : 'encore ' + fmtKm(t.km - total) + ' km' };
 }
 
 function renderTrophies() {
@@ -529,15 +536,16 @@ function renderTrophies() {
   if (!s) return;
   const today = todayKey();
   const total = O.compute(s, obj.sorties, today).total;
-  const all = O.trophies(s);
-  const dates = O.unlockDates(s, obj.sorties, today);
-  const unlocked = all.filter(t => total >= t.km).length;
+  const all = O.trophies(s, objOpts());
+  const dates = O.unlockDates(s, obj.sorties, today, objOpts());
+  const unlocked = all.filter(t => dates[t.id]).length;
   $('#o-tr-sum').textContent = unlocked + ' trophée' + (unlocked > 1 ? 's' : '') + ' sur ' + all.length + ' en ' + s.annee;
 
   let html = '<h3 class="o-tr-h">Spéciaux</h3>';
-  TR_SECTIONS.forEach(([cat, label]) => {
+  trSections(s).forEach(([cat, label]) => {
     const list = all.filter(t => t.cat === cat || (cat === 'symbole' && t.cat === 'objectif'));
-    const n = list.filter(t => total >= t.km).length;
+    if (!list.length) return;
+    const n = list.filter(t => dates[t.id]).length;
     html += '<h4 class="o-tr-sub"><span>' + label + '</span><span>' + n + ' / ' + list.length + '</span></h4><div class="o-badges">';
     html += list.map(t => {
       const st = trophyState(t, total, dates);
@@ -545,15 +553,15 @@ function renderTrophies() {
       return '<button type="button" class="o-badge' + (st.on ? ' on' : '') + (secret ? ' secret' : '') + '" data-tr="' + t.id + '">'
         + '<span class="o-badge-icon" aria-hidden="true">' + (secret ? '?' : t.icon) + '</span>'
         + '<b>' + (secret ? 'Secret' : t.name) + '</b>'
-        + '<span class="o-badge-sub">' + (secret ? '' : fmtKm(t.km) + ' km') + (st.sub && !secret ? '<br>' + st.sub : '') + '</span></button>';
+        + '<span class="o-badge-sub">' + (secret ? '' : kmTxt(t) + (kmTxt(t) && st.sub ? '<br>' : '') + st.sub) + '</span></button>';
     }).join('');
     html += '</div>';
   });
 
   const reg = all.filter(t => t.cat === 'regulier');
-  const next = reg.find(t => total < t.km);
+  const next = reg.find(t => !dates[t.id]);
   html += '<h3 class="o-tr-h">Réguliers <small>tous les ' + (reg[1] ? fmtKm(reg[1].km - reg[0].km) : '') + ' km</small></h3><div class="o-regs">'
-    + reg.map(t => '<button type="button" class="o-reg' + (total >= t.km ? ' on' : t === next ? ' next' : '') + '" data-tr="' + t.id + '">' + fmtKm(t.km) + '</button>').join('')
+    + reg.map(t => '<button type="button" class="o-reg' + (dates[t.id] ? ' on' : t === next ? ' next' : '') + '" data-tr="' + t.id + '">' + fmtKm(t.km) + '</button>').join('')
     + '</div>';
   $('#o-trophies').innerHTML = html;
 }
@@ -561,11 +569,11 @@ function renderTrophies() {
 // Toucher un trophée : lire sa phrase
 function showTrophy(id) {
   const s = obj.reglages;
-  const t = O.trophies(s).find(x => x.id === id);
+  const t = O.trophies(s, objOpts()).find(x => x.id === id);
   if (!t) return;
   const today = todayKey();
   const total = O.compute(s, obj.sorties, today).total;
-  const st = trophyState(t, total, O.unlockDates(s, obj.sorties, today));
+  const st = trophyState(t, total, O.unlockDates(s, obj.sorties, today, objOpts()));
   if (t.cat === 'secret' && !st.on) {
     ask({ title: 'Trophée secret', text: 'Continue de courir pour le découvrir…', buttons: [{ label: 'OK', value: 'ok', style: 'primary' }] });
     return;
@@ -620,11 +628,21 @@ function readSettings(ids) {
   if (!Number.isInteger(year) || year < 2000 || year > 2200) return { erreur: "L'année : par exemple " + today.slice(0, 4), el: ids.year };
   if (Number(date.slice(0, 4)) > year) return { erreur: "La date du total doit être dans l'année " + year, el: ids.date };
   const runs = Number($(ids.runs).value);
-  return { reglages: { totalDepart: total, dateDepart: date, objectif: goal, annee: year, sortiesParSemaine: runs } };
+  const ville = O.VILLES[$(ids.ville).value] ? $(ids.ville).value : O.DEFAULT_VILLE;
+  return { reglages: { totalDepart: total, dateDepart: date, objectif: goal, annee: year, sortiesParSemaine: runs, ville } };
 }
 
-const W_IDS = { total: '#w-total', date: '#w-date', goal: '#w-goal', year: '#w-year', runs: '#w-runs' };
-const S_IDS = { total: '#s-total', date: '#s-date', goal: '#s-goal', year: '#s-year', runs: '#s-runs' };
+const W_IDS = { total: '#w-total', date: '#w-date', goal: '#w-goal', year: '#w-year', runs: '#w-runs', ville: '#w-ville' };
+const S_IDS = { total: '#s-total', date: '#s-date', goal: '#s-goal', year: '#s-year', runs: '#s-runs', ville: '#s-ville' };
+
+// Les listes de villes (bienvenue et réglages)
+function fillVilles() {
+  const names = Object.keys(O.VILLES).sort((a, b) => a.localeCompare(b, 'fr'));
+  document.querySelectorAll('[data-villes]').forEach(sel => {
+    sel.innerHTML = names.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+    sel.value = O.DEFAULT_VILLE;
+  });
+}
 
 function welcomeNext() {
   const res = readSettings(W_IDS);
@@ -666,6 +684,7 @@ function objFillSettings() {
   $('#s-date').max = todayKey();
   $('#s-goal').value = kmText(s.objectif);
   $('#s-year').value = s.annee;
+  $('#s-ville').value = O.VILLES[s.ville] ? s.ville : O.DEFAULT_VILLE;
   setStepper($('#s-runs'), s.sortiesParSemaine);
 }
 
@@ -742,6 +761,7 @@ function objStart() {
     setStepper(out, Number(out.value) + Number(b.dataset.delta));
   }));
   setStepper($('#w-runs'), 2);
+  fillVilles();
 
   // Réglages
   $('#o-form').addEventListener('submit', objSaveSettings);

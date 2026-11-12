@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const O = require('../objectif.js');
 
-const S = { totalDepart: 295, dateDepart: '2026-11-12', objectif: 365, annee: 2026, sortiesParSemaine: 3 };
+const S = { totalDepart: 295, dateDepart: '2026-11-12', objectif: 365, annee: 2026, sortiesParSemaine: 3, ville: 'Grenoble' };
 let nid = 0;
 const run = (date, km) => ({ id: 'r' + (++nid), date, km });
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, a + ' ≠ ' + b);
@@ -248,16 +248,22 @@ test('paliers réguliers : tous les 50 km jusqu’à 500 km d’objectif, tous l
   assert.deepEqual(O.milestones(550), [100, 200, 300, 400, 500, 550]);
 });
 
+// Nouveaux trophées après avoir atteint « total » km (une seule sortie le 20/11), vus le 24/11
+const after = (settings, total, fetes = [], opts) =>
+  O.newTrophies(settings, total > settings.totalDepart ? [run('2026-11-20', total - settings.totalDepart)] : [], '2026-11-24', fetes, opts);
+const kmIds = list => ids(list).filter(id => !/^(p-|d\d)/.test(id)); // sans les exploits ni les dates
+
 test('trophées : chacun fêté une seule fois, jamais ceux déjà dans le total de départ', () => {
-  assert.deepEqual(ids(O.newTrophies(295, S, [])), []);
-  assert.deepEqual(ids(O.newTrophies(301, S, [])), ['r300']);
-  assert.deepEqual(ids(O.newTrophies(301, S, ['r300'])), []); // supprimée puis rajoutée : pas de 2e fête
-  assert.deepEqual(ids(O.newTrophies(301, S, [300])), []);    // ancien format (km) reconnu
-  // 331 km : π (secret, 314,16), Tor des Géants (330), Berne (305) et 300 km ; les spéciaux passent avant le régulier
-  assert.deepEqual(ids(O.newTrophies(331, S, [])), ['x5', 'c15', 'e0', 'r300']);
-  // 365 pour elle : l'objectif (qui vaut aussi « 1 km par jour »), en grande fête
-  const big = O.newTrophies(365, S, ['r300', 'r350', 'c15', 'x5', 'e0', 'e1']);
-  assert.deepEqual(ids(big), ['objectif']);
+  assert.deepEqual(ids(after(S, 295)), []);
+  const first = after(S, 301);
+  assert.ok(kmIds(first).includes('r300'));
+  assert.ok(ids(first).includes('p-1'));                       // première sortie
+  assert.deepEqual(after(S, 301, ids(first)), []);              // supprimée puis rajoutée : pas de 2e fête
+  assert.ok(!kmIds(after(S, 301, [300])).includes('r300'));     // ancien format (km) reconnu
+  assert.ok(first.every((t, i) => i === 0 || !t.big));         // le plus important en premier
+  // 365 pour elle : l'objectif (qui vaut aussi « 1 km par jour »), en grande fête, en premier
+  const big = after(S, 365);
+  assert.equal(big[0].id, 'objectif');
   assert.ok(big[0].big);
   // pour lui (1000 km), « 1 km par jour » à 365 est un trophée à part, en grande fête aussi
   const R = { ...S, totalDepart: 0, objectif: 1000 };
@@ -266,15 +272,40 @@ test('trophées : chacun fêté une seule fois, jamais ceux déjà dans le total
 });
 
 test('trophées : la liste complète, sans identifiant en double', () => {
-  const all = O.trophies(S);
+  const all = O.trophies(S, { alix: true });
   assert.equal(new Set(ids(all)).size, all.length);
   all.forEach(t => assert.match(t.id, /^[\w-]{1,40}$/));
-  for (let i = 1; i < all.length; i++) assert.ok(all[i - 1].km <= all[i].km); // triés par km
-  assert.equal(all.find(x => x.id === 's-1'), undefined); // fusionné avec l'objectif de 365
+  const km = all.filter(t => t.km !== null);
+  for (let i = 1; i < km.length; i++) assert.ok(km[i - 1].km <= km[i].km); // triés par km
+  assert.equal(all.find(x => x.id === 's-1'), undefined);  // fusionné avec l'objectif de 365
   assert.equal(all.find(x => x.id === 's-mi'), undefined); // = « un demi-km par jour »
   const t = O.trophies({ ...S, annee: 2028 }).find(x => x.id === 's-1');
   assert.equal(t.km, 366); // année bissextile : « 1 km par jour » = 366 km
-  assert.ok(O.trophies(S).find(x => x.id === 't-lille').text.includes('500 miles'));
+  assert.ok(O.trophies(S).find(x => x.name === '500 miles').text.includes('I would walk'));
+  [501, 512, 555, 1337].forEach(n => assert.equal(all.find(x => x.km === n), undefined)); // retirés
+});
+
+test('trophées : ce qui est réservé à Alix', () => {
+  const pote = ids(O.trophies(S));
+  const alix = ids(O.trophies(S, { alix: true }));
+  // 11:10 (111 km), l'heure parfaite (1 110 km), Chambéry et Sainte-Sigolène, 11/10, 13/04, 11,1 km d'un coup
+  ['x3', 'x10', 'a0', 'a1', 'p-1110'].forEach(id => { assert.ok(alix.includes(id), id); assert.ok(!pote.includes(id), id); });
+  const dates = O.trophies(S, { alix: true }).filter(x => x.jour).map(x => x.jour);
+  assert.ok(dates.includes('10-11') && dates.includes('04-13'));
+  assert.ok(!O.trophies(S).some(x => x.jour === '10-11' || x.jour === '04-13'));
+  assert.ok(O.trophies(S).some(x => x.jour === '12-23')); // l'anniversaire du boss : pour tout le monde
+});
+
+test('trajets : à vol d’oiseau depuis la ville de chacun', () => {
+  const lyon = O.trophies(S).find(x => x.cat === 'trajet' && x.name === 'Lyon');
+  assert.ok(lyon.km > 85 && lyon.km < 100, String(lyon.km));  // Grenoble → Lyon ≈ 95 km
+  assert.ok(lyon.text.includes('à vol d’oiseau') && lyon.text.includes('de Grenoble à Lyon'));
+  const P = { ...S, ville: 'Paris' };
+  assert.equal(O.trophies(P).find(x => x.name === 'Paris'), undefined); // pas de Paris → Paris
+  const lyonP = O.trophies(P).find(x => x.name === 'Lyon');
+  assert.ok(lyonP.km > 380 && lyonP.km < 400, String(lyonP.km)); // Paris → Lyon ≈ 392 km
+  assert.equal(O.cleanSettings({ ...S, ville: 'Atlantide' }).ville, 'Grenoble'); // ville inconnue
+  assert.equal(O.cleanSettings({ ...S, ville: undefined }).ville, 'Grenoble');  // anciens réglages
 });
 
 test('trophées : date de déblocage', () => {
@@ -285,11 +316,33 @@ test('trophées : date de déblocage', () => {
   assert.equal(d['r350'], null);
 });
 
+test('exploits et dates spéciales', () => {
+  const runs = [run('2026-11-13', 25), run('2026-11-14', 11.1), run('2026-11-15', 3), run('2026-11-17', 12), run('2026-11-24', 12)];
+  const d = O.unlockDates(S, runs, '2026-11-26', { alix: true });
+  assert.equal(d['p-1'], '2026-11-13');
+  assert.equal(d['p-10km'], '2026-11-13');
+  assert.equal(d['p-semi'], '2026-11-13');
+  assert.equal(d['p-marathon'], null);
+  assert.equal(d['p-10'], null);
+  assert.equal(d['p-weekend'], '2026-11-15');     // samedi 14 + dimanche 15
+  assert.equal(d['p-semaine'], '2026-11-13');     // 5,6 km à faire la 1re semaine
+  assert.equal(d['p-3semaines'], '2026-11-24');   // 3 semaines bouclées de suite
+  assert.equal(d['p-retour'], '2026-11-13');      // 20 km de retard, puis +4 km
+  assert.equal(d['p-1110'], '2026-11-14');        // 11,1 km pile
+  const vendredi13 = O.trophies(S).find(x => x.jour === 'vendredi13');
+  assert.equal(d[vendredi13.id], '2026-11-13');   // le 13/11/2026 est un vendredi
+  const noel = O.trophies(S).find(x => x.jour === '12-25');
+  assert.equal(d[noel.id], null);
+  // une semaine ratée casse la série
+  const d2 = O.unlockDates(S, [run('2026-11-13', 6), run('2026-11-24', 12), run('2026-12-01', 12)], '2026-12-03');
+  assert.equal(d2['p-3semaines'], null);
+});
+
 test('objectif de 1000 km : un palier tous les 100 km, sans fêter ceux déjà dépassés', () => {
   const R = { ...S, totalDepart: 838.9, objectif: 1000 };
-  assert.deepEqual(ids(O.newTrophies(845, R, [])), ['e7']);      // Bruxelles ; 800 était déjà passé au départ
-  assert.deepEqual(ids(O.newTrophies(901, R, [])), ['e8', 'e7', 'r900']); // + Ljubljana et Bruxelles
-  assert.deepEqual(ids(O.newTrophies(1001, R, ['r900', 'e7', 'e8'])), ['objectif', 'x9', 'e10', 'e9']); // + Mille Bornes, Amsterdam, Rome
+  assert.ok(!kmIds(after(R, 845)).includes('r800'));    // 800 était déjà passé au départ
+  assert.ok(kmIds(after(R, 901)).includes('r900'));
+  assert.equal(after(R, 1001)[0].id, 'objectif');
   assert.equal(O.barStart(R), 790);
   assert.equal(O.barStart(S), 280); // la barre de 365 ne change pas
   const r = O.compute(R, [], '2026-11-12');

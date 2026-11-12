@@ -125,6 +125,54 @@ function saveDays() {
 let days = loadDays();
 const has = key => Object.prototype.hasOwnProperty.call(days, key);
 
+/* ---------- 11:10 réservé à Alix ----------
+   L'app s'ouvre sur Objectif 365. L'espace 11:10 apparaît si on l'a débloqué
+   (5 appuis sur « Auto », puis le code) ou s'il y a déjà des 11:10 sur ce téléphone.
+   Le code n'est pas écrit en clair : on compare juste son empreinte (SHA-256). */
+const UNLOCK_KEY = '1110.debloque';
+const CODE_HASH = '6ebaa7f975e5218242d785fddc562a9f74dc17a9699c9e474c7436176b908cf7';
+
+function isUnlocked() {
+  try { if (localStorage.getItem(UNLOCK_KEY) === '1') return true; } catch (e) { /* rien */ }
+  return Object.keys(days).length > 0;
+}
+
+function unlock() {
+  try { localStorage.setItem(UNLOCK_KEY, '1'); } catch (e) { /* rien */ }
+  document.documentElement.classList.remove('locked');
+}
+
+async function checkCode(code) {
+  if (!window.crypto || !crypto.subtle) return false;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(code).trim()));
+  const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  return hex === CODE_HASH;
+}
+
+// 5 appuis rapides sur « Auto » (dans Apparence) : on demande le code
+let autoTaps = [];
+async function onAutoTap() {
+  const t = Date.now();
+  autoTaps = autoTaps.filter(x => t - x < 3000).concat(t);
+  if (autoTaps.length < 5) return;
+  autoTaps = [];
+  const r = await ask({
+    title: 'Code secret',
+    code: true,
+    buttons: [{ label: 'Annuler', value: 'cancel' }, { label: 'Valider', value: 'ok', style: 'primary' }],
+  });
+  if (r.value !== 'ok') return;
+  if (await checkCode(r.code)) {
+    unlock();
+    rainHearts(40);
+    toast('11:10 débloqué ♥');
+    renderAll();
+    showSpace('1110');
+  } else {
+    toast('Ce n’est pas le bon code');
+  }
+}
+
 // Demande au navigateur de ne pas effacer nos données s'il manque de place
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 
@@ -201,7 +249,7 @@ async function undoToday() {
 // Le 11 octobre : grosse pluie de cœurs à la première ouverture de la journée
 function birthdaySurprise() {
   const today = todayKey();
-  if (!isBirthday(today)) return;
+  if (!isBirthday(today) || !isUnlocked()) return;
   if (!TEST_DAY) {
     const flag = BDAY_SHOWN_KEY + today.slice(0, 4);
     try {
@@ -495,7 +543,7 @@ async function exportData() {
   const data = { app: '11:10', format: 1, exportedAt: new Date().toISOString(), days };
   if (typeof objExportData === 'function') data.objectif365 = objExportData();
   const json = JSON.stringify(data, null, 2);
-  const name = '11h10-sauvegarde-' + todayKey() + '.json';
+  const name = (isUnlocked() ? '11h10' : 'objectif365') + '-sauvegarde-' + todayKey() + '.json';
   const file = new File([json], name, { type: 'application/json' });
 
   // Sur iPhone : la feuille de partage (Enregistrer dans Fichiers, Mail, AirDrop…)
@@ -598,7 +646,7 @@ function toast(msg, opts = {}) {
 // (km et date : pour modifier une sortie d'Objectif 365)
 const dlg = $('#dialog');
 let dlgOpenedAt = 0;
-function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
+function ask({ title, text = '', time, km, date, dateMin, dateMax, code, buttons }) {
   return new Promise(resolve => {
     $('#dialog-title').textContent = title;
     $('#dialog-text').textContent = text;
@@ -611,6 +659,9 @@ function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
     dateIn.value = date || '';
     dateIn.min = dateMin || '';
     dateIn.max = dateMax || '';
+    const codeIn = $('#dialog-code');
+    $('#dialog-code-wrap').hidden = !code;
+    codeIn.value = '';
 
     // Répond une seule fois, que ce soit par un bouton, Échap ou un toucher à côté
     let done = false;
@@ -620,7 +671,7 @@ function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
       if (done) return;
       done = true;
       dlg.removeEventListener('close', onClose);
-      resolve({ value, time: input.value, km: kmIn.value, date: dateIn.value });
+      resolve({ value, time: input.value, km: kmIn.value, date: dateIn.value, code: codeIn.value });
     };
 
     const actions = $('#dialog-actions');
@@ -640,7 +691,8 @@ function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
     dlg.addEventListener('close', onClose);
     dlgOpenedAt = Date.now();
     dlg.showModal();
-    actions.lastElementChild.focus(); // évite d'ouvrir le sélecteur d'heure d'office
+    if (code) codeIn.focus();
+    else actions.lastElementChild.focus(); // évite d'ouvrir le sélecteur d'heure d'office
   });
 }
 // Toucher à côté de la fenêtre la ferme
@@ -661,7 +713,7 @@ const SPACE_SCREENS = {
 };
 
 function loadView() {
-  const v = { space: '1110', '1110': 'home', '365': 'obj' };
+  const v = { space: '365', '1110': 'home', '365': 'obj' };
   try {
     const saved = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}');
     if (saved.space in SPACE_SCREENS) v.space = saved.space;
@@ -678,6 +730,7 @@ function saveView() {
 const spaceOf = name => (SPACE_SCREENS['365'].includes(name) ? '365' : '1110');
 
 function showScreen(name) {
+  if (spaceOf(name) === '1110' && !isUnlocked()) name = view['365']; // 11:10 pas débloqué
   if (typeof objRoute === 'function') name = objRoute(name); // Objectif 365 pas encore réglé → bienvenue
   const space = spaceOf(name);
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
@@ -743,8 +796,17 @@ function start() {
   }));
   document.querySelectorAll('[data-modes]').forEach(el => el.addEventListener('click', e => {
     const b = e.target.closest('.mode-btn');
-    if (b) setMode(b.dataset.modeId);
+    if (!b) return;
+    setMode(b.dataset.modeId);
+    if (b.dataset.modeId === 'auto') onAutoTap();
   }));
+  $('#dialog-code').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const ok = $('#dialog-actions .primary');
+    if (ok) ok.click();
+  });
+  if (isUnlocked()) unlock(); // (Alix a déjà des 11:10 : on retient que c'est débloqué)
   $('#btn-export').addEventListener('click', exportData);
   $('#btn-import').addEventListener('click', () => $('#file-import').click());
   $('#file-import').addEventListener('change', e => {
@@ -791,7 +853,7 @@ function registerServiceWorker() {
 
   // Affiche le numéro de version dans les Réglages
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.version) $('#app-version').textContent = e.data.version;
+    if (e.data && e.data.version) document.querySelectorAll('[data-version]').forEach(el => { el.textContent = e.data.version; });
   });
   navigator.serviceWorker.ready.then(reg => { if (reg.active) reg.active.postMessage('version'); });
 }

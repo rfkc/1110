@@ -400,6 +400,8 @@ dialog[open] { animation: pop .25s ease-out; }
   font-weight: 600;
   transition: background-color .25s, color .25s, transform .15s;
 }
+.locked .spaces { display: none; }   /* 11:10 pas encore débloqué : l'app n'est qu'Objectif 365 */
+.locked .app { padding-top: calc(env(safe-area-inset-top) + 6px); }
 .space-btn[aria-selected="true"] { background: var(--btn); color: var(--on-btn); }
 .space-btn:active { transform: scale(.96); }
 
@@ -676,6 +678,17 @@ dialog[open] { animation: pop .25s ease-out; }
   min-height: 52px;
 }
 .o-input span { color: var(--mute); font-weight: 600; }
+.o-tip { margin: -10px 0 18px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--soft) 35%, transparent); color: var(--ink); font-size: 14px; line-height: 1.45; }
+.o-select select, .o-field select {
+  font: 600 16px 'Quicksand', system-ui, sans-serif;
+  color: var(--ink);
+  background: none;
+  border: 0; outline: 0;
+  -webkit-appearance: none; appearance: none;
+}
+.o-select select { flex: 1; min-height: 52px; font-size: 18px; }
+.o-select::after { content: '▾'; color: var(--mute); }
+.o-field select { max-width: 160px; min-height: 40px; padding: 6px 10px; border: 1.5px solid var(--soft); border-radius: 12px; background: var(--bg); text-align: right; }
 .o-stepper { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 10px; }
 .o-stepper output { min-width: 64px; text-align: center; font: 400 64px/1 'Fraunces', Georgia, serif; }
 .o-step-btn {

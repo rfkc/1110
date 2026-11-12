@@ -1,7 +1,7 @@
 {
-  "name": "11:10",
-  "short_name": "11:10",
-  "description": "Nos 11:10, jour après jour.",
+  "name": "Objectif 365",
+  "short_name": "Objectif 365",
+  "description": "365 km dans l'année : note tes sorties, suis ton rythme, débloque des trophées.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

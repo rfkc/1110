@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>11:10</title>
-  <meta name="description" content="Nos 11:10, jour après jour.">
+  <title>Objectif 365</title>
+  <meta name="description" content="365 km dans l'année : note tes sorties, suis ton rythme, débloque des trophées.">
 
   <!-- iPhone : app plein écran une fois ajoutée à l'écran d'accueil -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="11:10">
+  <meta name="apple-mobile-web-app-title" content="Objectif 365">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#FBF5F2">
 
@@ -26,8 +26,13 @@
   <!-- Applique le thème et le mode clair/sombre tout de suite, pour éviter un flash de couleur -->
   <script>
     (function () {
-      var root = document.documentElement, theme = null, mode = null;
-      try { theme = localStorage.getItem('1110.theme'); mode = localStorage.getItem('1110.mode'); } catch (e) {}
+      var root = document.documentElement, theme = null, mode = null, open = false;
+      try {
+        theme = localStorage.getItem('1110.theme'); mode = localStorage.getItem('1110.mode');
+        // 11:10 n'apparaît que s'il a été débloqué (ou s'il y a déjà des 11:10 sur ce téléphone)
+        open = localStorage.getItem('1110.debloque') === '1' || (localStorage.getItem('1110.days') || '{}').length > 2;
+      } catch (e) {}
+      if (!open) root.classList.add('locked');
       if (theme) root.dataset.theme = theme;
       if (mode === 'dark' || (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) root.setAttribute('data-dark', '');
     })();
@@ -38,9 +43,10 @@
     <p class="test-banner" id="test-banner" hidden></p>
 
     <!-- Les deux espaces : 11:10 et Objectif 365 -->
+    <!-- (caché tant que 11:10 n'est pas débloqué : voir app.js) -->
     <div class="spaces" role="tablist" aria-label="Espace">
-      <button type="button" role="tab" class="space-btn" data-space="1110">11:10</button>
       <button type="button" role="tab" class="space-btn" data-space="365">Objectif 365</button>
+      <button type="button" role="tab" class="space-btn" data-space="1110">11:10</button>
     </div>
 
     <main id="main">
@@ -120,7 +126,7 @@
           <input type="file" id="file-import" accept=".json,application/json" hidden>
         </div>
 
-        <p class="version">11:10 · version <span id="app-version">–</span></p>
+        <p class="version">11:10 · version <span id="app-version" data-version>–</span></p>
       </section>
 
       <!-- ============ Objectif 365 : bienvenue (premier lancement) ============ -->
@@ -129,7 +135,8 @@
 
         <div class="o-step" data-step="1">
           <h2 class="o-title">Où en es-tu ?</h2>
-          <p class="o-text">Recopie ton total de l'année, celui de Strava. Tes prochaines sorties s'ajouteront à ce chiffre.</p>
+          <p class="o-text">Recopie le total de km que tu as déjà couru cette année. Tes prochaines sorties s'ajouteront à ce chiffre.</p>
+          <p class="o-tip">💡 Tu le trouves dans l'app <b>Strava</b>, onglet <b>Stats</b>.</p>
           <label class="o-label" for="w-total">Total de l'année</label>
           <div class="o-input"><input id="w-total" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>km</span></div>
           <label class="o-label" for="w-date">À la date du</label>
@@ -143,6 +150,8 @@
           <div class="o-input"><input id="w-goal" type="text" inputmode="decimal" autocomplete="off"><span>km</span></div>
           <label class="o-label" for="w-year">Année</label>
           <div class="o-input"><input id="w-year" type="text" inputmode="numeric" autocomplete="off"></div>
+          <label class="o-label" for="w-ville">Ta ville (pour les trophées de voyage)</label>
+          <div class="o-input o-select"><select id="w-ville" data-villes></select></div>
         </div>
 
         <div class="o-step" data-step="3" hidden>
@@ -228,6 +237,7 @@
             <label class="o-field"><span>À la date du</span><input id="s-date" type="date"></label>
             <label class="o-field"><span>Objectif</span><span class="o-field-in"><input id="s-goal" type="text" inputmode="decimal" autocomplete="off"> km</span></label>
             <label class="o-field"><span>Année</span><input id="s-year" type="text" inputmode="numeric" autocomplete="off"></label>
+            <label class="o-field"><span>Ta ville</span><select id="s-ville" data-villes></select></label>
             <div class="o-field"><span>Sorties par semaine</span>
               <div class="o-stepper small" data-target="s-runs">
                 <button type="button" class="o-step-btn" data-delta="-1" aria-label="Une sortie de moins">−</button>
@@ -247,11 +257,13 @@
         <div class="themes" data-themes></div>
 
         <h3>Sauvegarde</h3>
-        <p class="note">Tes sorties sont gardées uniquement sur ce téléphone, avec tes 11:10. Une seule sauvegarde contient les deux.</p>
+        <p class="note">Tes sorties sont gardées uniquement sur ce téléphone. Exporte-les de temps en temps (dans Fichiers ou par mail) pour ne rien perdre si tu changes de téléphone.</p>
         <div class="settings-actions">
           <button class="btn" id="o-export" type="button">Exporter mes données</button>
           <button class="btn" id="o-import" type="button">Importer</button>
         </div>
+
+        <p class="version">Objectif 365 · version <span data-version>–</span></p>
       </section>
     </main>
 
@@ -332,6 +344,9 @@
       <p id="dialog-text"></p>
       <label class="time-wrap" id="dialog-time-wrap" hidden>
         <input type="time" id="dialog-time">
+      </label>
+      <label class="o-input dialog-code" id="dialog-code-wrap" hidden>
+        <input type="password" id="dialog-code" inputmode="numeric" autocomplete="off" aria-label="Code">
       </label>
       <div class="dialog-fields" id="dialog-fields" hidden>
         <label class="o-input"><input type="text" id="dialog-km" inputmode="decimal" autocomplete="off" aria-label="Kilomètres"><span>km</span></label>

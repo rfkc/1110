@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#F4C0D1"/>
-  <text x="256" y="278" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="500" font-size="165" fill="#4B1528">11:10</text>
-  <g transform="translate(221 322) scale(2.92)">
-    <path fill="#D4537E" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.6 2.9 4.5 6.8 4.5c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.9 0 5.9 4.1 4.4 7.3C19.5 16.4 12 21 12 21z"/>
-  </g>
+  <defs>
+    <radialGradient id="g" cx="80%" cy="0%" r="120%">
+      <stop offset="0" stop-color="#FDE3EC"/><stop offset=".55" stop-color="#F6BDD0"/><stop offset="1" stop-color="#ED93B1"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="195" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="28"/>
+  <circle cx="256" cy="256" r="195" fill="none" stroke="#D4537E" stroke-width="28" stroke-linecap="round"
+          pathLength="100" stroke-dasharray="80 100" transform="rotate(-90 256 256)"/>
+  <text x="256" y="300" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="500" font-size="180" fill="#4B1528">365</text>
 </svg>
