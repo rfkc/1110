@@ -468,7 +468,6 @@ function objCheckMilestones() {
   setTimeout(() => celebrate(m, r), reduceMotion() ? 0 : 900); // après la montée de la barre
 }
 
-let partyTimer = null;
 function celebrate(m, r) {
   const s = obj.reglages;
   const big = m === s.objectif;
@@ -483,12 +482,10 @@ function celebrate(m, r) {
   rainHearts(big ? 90 : 28);
   if (big) setTimeout(() => rainHearts(50), 1600);
   $('#o-party-ok').focus();
-  clearTimeout(partyTimer);
-  if (!big) partyTimer = setTimeout(closeParty, 4500);
 }
 
+// La carte reste affichée jusqu'à ce qu'elle touche « Continuer »
 function closeParty() {
-  clearTimeout(partyTimer);
   $('#o-party').hidden = true;
 }
 
@@ -654,7 +651,6 @@ function objStart() {
 
   // Fête
   $('#o-party-ok').addEventListener('click', closeParty);
-  $('#o-party').addEventListener('click', e => { if (e.target.id === 'o-party') closeParty(); });
 
   // Retour dans l'app : on relit les données (au cas où) et on remet tout à jour
   document.addEventListener('visibilitychange', () => {

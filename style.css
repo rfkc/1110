@@ -751,6 +751,7 @@ dialog[open] { animation: pop .25s ease-out; }
   box-shadow: var(--shadow);
   animation: pop .5s cubic-bezier(.2, 1.4, .4, 1);
 }
+#o-party-ok:focus { outline: none; }
 .o-party-kicker { margin: 0; color: var(--ring); font-size: 12.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .o-party-title { margin: 6px 0 4px; font: 400 64px/1.05 'Fraunces', Georgia, serif; }
 .o-party-text { margin: 0 0 22px; color: var(--mute); font-size: 16px; line-height: 1.45; }
