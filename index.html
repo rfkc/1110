@@ -320,6 +320,67 @@
     </nav>
   </div>
 
+  <!-- Installation : affiché quand l'app est ouverte dans le navigateur (et pas depuis l'icône) -->
+  <div class="install" id="install" hidden>
+    <div class="install-inner">
+      <img class="install-logo" src="icons/apple-touch-icon.png" alt="" width="84" height="84">
+      <h2 class="install-title">Installe l'app d'abord</h2>
+      <p class="install-text" id="install-text">Tes kilomètres seront gardés dans l'app installée sur ton écran d'accueil. Si tu les notes ici, dans le navigateur, ils n'y seront pas.</p>
+
+      <!-- iPhone / iPad : 3 étapes -->
+      <ol class="install-steps" id="install-ios" hidden>
+        <li>
+          <svg viewBox="0 0 120 64" aria-hidden="true">
+            <rect x="2" y="12" width="116" height="40" rx="12" class="i-bar"/>
+            <g class="i-dim"><path d="M18 32h10M18 32l4-4M18 32l4 4"/><path d="M98 32h10M108 32l-4-4M108 32l-4 4"/></g>
+            <circle cx="60" cy="32" r="15" class="i-hot"/>
+            <path d="M54 30v8h12v-8M60 24v11M56 28l4-4 4 4" class="i-ico"/>
+          </svg>
+          <span>Touche <b>Partager</b>, le carré avec la flèche, en bas de Safari. Tu ne le vois pas ? Touche d'abord <b>•••</b>.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 120 64" aria-hidden="true">
+            <rect x="2" y="2" width="116" height="60" rx="10" class="i-bar"/>
+            <rect x="8" y="8" width="104" height="14" rx="4" class="i-row"/>
+            <rect x="8" y="25" width="104" height="14" rx="4" class="i-hotrow"/>
+            <rect x="8" y="42" width="104" height="14" rx="4" class="i-row"/>
+            <rect x="14" y="27.5" width="9" height="9" rx="2" class="i-ico2"/><path d="M18.5 29.5v5M16 32h5" class="i-ico2"/>
+            <text x="28" y="35" class="i-txt">Sur l'écran d'accueil</text>
+          </svg>
+          <span>Fais défiler et choisis <b>« Sur l'écran d'accueil »</b>.</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 120 64" aria-hidden="true">
+            <rect x="2" y="2" width="116" height="60" rx="10" class="i-bar"/>
+            <image href="icons/apple-touch-icon.png" x="10" y="16" width="32" height="32" clip-path="inset(0 round 8px)"/>
+            <text x="48" y="36" class="i-txt">Objectif 365</text>
+            <rect x="80" y="8" width="34" height="14" rx="7" class="i-hot"/>
+            <text x="97" y="18" text-anchor="middle" class="i-btn">Ajouter</text>
+          </svg>
+          <span>Touche <b>Ajouter</b>, puis ouvre l'app depuis ta nouvelle icône.</span>
+        </li>
+      </ol>
+
+      <!-- Android : le vrai bouton d'installation -->
+      <div class="install-android" id="install-android" hidden>
+        <button type="button" class="big-btn" id="install-btn">Installer l'app</button>
+        <p class="install-note" id="install-android-note">Touche le menu <b>⋮</b> de Chrome, puis <b>« Ajouter à l'écran d'accueil »</b>.</p>
+      </div>
+
+      <!-- Navigateur intégré (WhatsApp, Instagram…) : il faut passer par Safari / Chrome -->
+      <div class="install-inapp" id="install-inapp" hidden>
+        <p class="install-text">Ce lien s'est ouvert dans une autre app. Ouvre-le dans <b id="install-browser">Safari</b> pour pouvoir l'installer.</p>
+        <button type="button" class="big-btn" id="install-copy">Copier le lien</button>
+        <p class="install-note">Puis colle-le dans la barre d'adresse de <span id="install-browser2">Safari</span>.</p>
+      </div>
+
+      <!-- Ordinateur -->
+      <p class="install-text" id="install-desktop" hidden>L'app est faite pour le téléphone : ouvre <b>rfkc.github.io/1110</b> sur ton iPhone ou ton Android pour l'installer.</p>
+
+      <button type="button" class="link install-skip" id="install-skip">Continuer dans le navigateur quand même</button>
+    </div>
+  </div>
+
   <!-- Objectif 365 : les paliers fêtés -->
   <div class="o-party" id="o-party" role="dialog" aria-modal="true" aria-labelledby="o-party-title" hidden>
     <div class="o-party-card">

@@ -844,6 +844,50 @@ dialog[open] { animation: pop .25s ease-out; }
 .o-reg.next { border-style: solid; border-color: var(--btn); color: var(--ink); }
 #dialog-text { white-space: pre-line; }
 
+/* ---------- Installation (app ouverte dans le navigateur) ---------- */
+.install {
+  position: fixed; inset: 0; z-index: 40;
+  overflow-y: auto;
+  background: radial-gradient(120% 70% at 50% 0%, var(--soft) 0%, var(--bg) 60%);
+  padding: calc(28px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom));
+  -webkit-user-select: none; user-select: none;
+}
+.install-inner { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.install-logo { border-radius: 20px; box-shadow: 0 8px 24px rgba(43, 15, 29, .3); }
+.install-title { font-size: 30px; margin: 18px 0 8px; }
+.install-text { color: var(--mute); font-size: 15px; line-height: 1.5; margin: 0 0 18px; }
+.install-steps { list-style: none; counter-reset: step; width: 100%; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.install-steps li {
+  counter-increment: step;
+  position: relative;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px 12px 44px;
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 15px; line-height: 1.4;
+}
+.install-steps li::before {
+  content: counter(step);
+  position: absolute; left: 12px; top: 50%; margin-top: -12px;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--btn); color: var(--on-btn);
+  font-size: 13px; font-weight: 700;
+}
+.install-steps svg { flex: none; width: 104px; height: auto; }
+.install-steps .i-bar { fill: var(--bg); stroke: var(--brd); }
+.install-steps .i-dim { fill: none; stroke: var(--mute); stroke-width: 2.5; stroke-linecap: round; opacity: .35; }
+.install-steps .i-hot { fill: var(--btn); }
+.install-steps .i-ico { fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.install-steps .i-row { fill: var(--card); }
+.install-steps .i-hotrow { fill: var(--soft); stroke: var(--btn); stroke-width: 1.5; }
+.install-steps .i-ico2 { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; }
+.install-steps .i-txt { font: 700 8px 'Quicksand', sans-serif; fill: var(--ink); }
+.install-steps .i-btn { font: 700 7.5px 'Quicksand', sans-serif; fill: #fff; }
+.install-android, .install-inapp { width: 100%; }
+.install-note { color: var(--mute); font-size: 13.5px; margin: 10px 0 0; line-height: 1.45; }
+.install-skip { margin-top: 18px; font-size: 13px; opacity: .8; }
+
 @keyframes o-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes o-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes o-flash { from { background: color-mix(in srgb, var(--soft) 60%, transparent); } to { background: transparent; } }

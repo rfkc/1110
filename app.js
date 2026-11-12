@@ -861,7 +861,85 @@ function start() {
 
   setInterval(tick, 1000);
   birthdaySurprise();
+  setupInstall();
   registerServiceWorker();
+}
+
+/* ---------- Installation sur l'écran d'accueil ----------
+   Sur iPhone, Safari et l'app installée ont chacun leur stockage : on demande d'installer
+   l'app AVANT de noter des données. Apple n'offre aucun bouton pour le faire à sa place :
+   on explique les 3 gestes. Sur Android, Chrome propose un vrai bouton d'installation. */
+const SKIP_INSTALL_KEY = '1110.navigateur'; // « continuer dans le navigateur quand même »
+let installEvent = null;                   // (Android) l'installation proposée par Chrome
+
+function isInstalled() {
+  return navigator.standalone === true
+    || matchMedia('(display-mode: standalone)').matches
+    || matchMedia('(display-mode: fullscreen)').matches;
+}
+
+function setupInstall() {
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|Messenger|WhatsApp|Snapchat|LinkedInApp|TikTok|Line\//.test(ua);
+  let skipped = false;
+  try { skipped = localStorage.getItem(SKIP_INSTALL_KEY) === '1'; } catch (e) { /* rien */ }
+
+  // Android : on garde la proposition d'installation de Chrome pour notre bouton
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    installEvent = e;
+    $('#install-btn').hidden = false;
+    $('#install-android-note').innerHTML = 'Sinon : menu <b>⋮</b> de Chrome, puis <b>« Ajouter à l’écran d’accueil »</b>.';
+  });
+  window.addEventListener('appinstalled', () => {
+    $('#install-android-note').innerHTML = 'C’est installé ! Ouvre l’app depuis ton écran d’accueil.';
+    $('#install-btn').hidden = true;
+  });
+
+  // Déjà installée, mode test, « continuer quand même », ou des données déjà notées ici
+  // (filet de sécurité : on ne bloque jamais quelqu'un qui utilise déjà l'app)
+  let hasData = Object.keys(days).length > 0;
+  try { hasData = hasData || !!localStorage.getItem('1110.objectif365'); } catch (e) { /* rien */ }
+  if (isInstalled() || TEST_DAY || skipped || hasData) return;
+
+  const box = $('#install');
+  box.hidden = false;
+  if (inApp) {
+    $('#install-inapp').hidden = false;
+    const browser = ios ? 'Safari' : 'Chrome';
+    $('#install-browser').textContent = browser;
+    $('#install-browser2').textContent = browser;
+  } else if (ios) {
+    $('#install-ios').hidden = false;
+  } else if (android) {
+    $('#install-android').hidden = false;
+    $('#install-btn').hidden = !installEvent;
+  } else {
+    $('#install-desktop').hidden = false;
+  }
+
+  $('#install-btn').addEventListener('click', async () => {
+    if (!installEvent) return;
+    installEvent.prompt();
+    await installEvent.userChoice.catch(() => {});
+    installEvent = null;
+  });
+  $('#install-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(location.origin + location.pathname); toast('Lien copié'); }
+    catch (e) { toast(location.origin + location.pathname); }
+  });
+  $('#install-skip').addEventListener('click', async () => {
+    const r = await ask({
+      title: 'Continuer dans le navigateur ?',
+      text: 'Ce que tu notes ici restera dans le navigateur : si tu installes l’app plus tard, elle sera vide. (Tu pourras toujours exporter puis importer tes données.)',
+      buttons: [{ label: 'Installer', value: 'back' }, { label: 'Continuer', value: 'go', style: 'primary' }],
+    });
+    if (r.value !== 'go') return;
+    try { localStorage.setItem(SKIP_INSTALL_KEY, '1'); } catch (e) { /* rien */ }
+    box.hidden = true;
+  });
 }
 
 /* ---------- Service worker : fonctionnement hors ligne + mises à jour ---------- */
