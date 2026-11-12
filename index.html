@@ -37,6 +37,12 @@
   <div class="app">
     <p class="test-banner" id="test-banner" hidden></p>
 
+    <!-- Les deux espaces : 11:10 et Objectif 365 -->
+    <div class="spaces" role="tablist" aria-label="Espace">
+      <button type="button" role="tab" class="space-btn" data-space="1110">11:10</button>
+      <button type="button" role="tab" class="space-btn" data-space="365">Objectif 365</button>
+    </div>
+
     <main id="main">
       <!-- ============ Accueil ============ -->
       <section class="screen active" id="screen-home" aria-label="Accueil">
@@ -116,10 +122,138 @@
 
         <p class="version">11:10 · version <span id="app-version">–</span></p>
       </section>
+
+      <!-- ============ Objectif 365 : bienvenue (premier lancement) ============ -->
+      <section class="screen o-screen" id="screen-obj-welcome" data-space="365" aria-label="Bienvenue dans Objectif 365">
+        <div class="o-steps" id="o-steps" aria-hidden="true"><i></i><i></i><i></i></div>
+
+        <div class="o-step" data-step="1">
+          <h2 class="o-title">Où en es-tu ?</h2>
+          <p class="o-text">Recopie ton total de l'année, celui de Strava. Tes prochaines sorties s'ajouteront à ce chiffre.</p>
+          <label class="o-label" for="w-total">Total de l'année</label>
+          <div class="o-input"><input id="w-total" type="text" inputmode="decimal" autocomplete="off" placeholder="0"><span>km</span></div>
+          <label class="o-label" for="w-date">À la date du</label>
+          <div class="o-input"><input id="w-date" type="date"></div>
+        </div>
+
+        <div class="o-step" data-step="2" hidden>
+          <h2 class="o-title">Ton objectif</h2>
+          <p class="o-text">365 km dans l'année, c'est 1 km par jour en moyenne. Tu pourras le changer plus tard.</p>
+          <label class="o-label" for="w-goal">Objectif</label>
+          <div class="o-input"><input id="w-goal" type="text" inputmode="decimal" autocomplete="off"><span>km</span></div>
+          <label class="o-label" for="w-year">Année</label>
+          <div class="o-input"><input id="w-year" type="text" inputmode="numeric" autocomplete="off"></div>
+        </div>
+
+        <div class="o-step" data-step="3" hidden>
+          <h2 class="o-title">Ton rythme</h2>
+          <p class="o-text">Combien de sorties par semaine, en général ? L'app s'en sert pour te proposer des sorties à ta mesure.</p>
+          <div class="o-stepper" data-target="w-runs">
+            <button type="button" class="o-step-btn" data-delta="-1" aria-label="Une sortie de moins">−</button>
+            <output id="w-runs">2</output>
+            <button type="button" class="o-step-btn" data-delta="1" aria-label="Une sortie de plus">+</button>
+          </div>
+          <p class="o-stepper-unit" id="w-runs-unit">sorties par semaine</p>
+        </div>
+
+        <div class="o-welcome-actions">
+          <button type="button" class="big-btn o-next" id="w-next">Suivant</button>
+          <button type="button" class="link" id="w-back" hidden>retour</button>
+        </div>
+      </section>
+
+      <!-- ============ Objectif 365 : suivi ============ -->
+      <section class="screen o-screen" id="screen-obj" data-space="365" aria-label="Suivi">
+        <div class="o-mood" id="o-mood">
+          <span class="o-wm" id="o-wm" aria-hidden="true">365</span>
+          <p class="o-kicker"><i></i><span id="o-kicker"></span></p>
+          <p class="o-lead" id="o-lead"></p>
+          <div class="o-bar" id="o-bar" aria-hidden="true">
+            <div class="o-track"><div class="o-fill" id="o-fill"></div><div class="o-knob" id="o-knob"></div></div>
+            <div class="o-flags" id="o-flags"></div>
+          </div>
+          <div class="o-row">
+            <b class="o-total"><span id="o-total">0</span> <small>/ <span id="o-goal">365</span> km</small></b>
+            <span class="o-left" id="o-left"></span>
+          </div>
+        </div>
+
+        <div class="card o-week" id="o-week">
+          <div class="o-week-top">
+            <span class="label" id="o-week-label">D'ici dimanche</span>
+            <span class="o-week-v"><span id="o-week-v">0</span> <small>km</small></span>
+          </div>
+          <div class="o-pills" id="o-pills"></div>
+          <div class="o-days" id="o-days" aria-hidden="true"></div>
+          <p class="o-week-note" id="o-week-note"></p>
+        </div>
+
+        <div class="o-facts" id="o-facts">
+          <div class="card"><span class="label" id="o-f-left-label">Reste</span><b id="o-f-left"></b></div>
+          <div class="card"><span class="label">Jours</span><b id="o-f-days"></b></div>
+          <div class="card"><span class="label">Au 31/12</span><b id="o-f-proj"></b></div>
+        </div>
+
+        <h3 class="o-h">Ta courbe</h3>
+        <div class="card o-chart" id="o-chart"></div>
+
+        <div class="o-h-row">
+          <h3 class="o-h">Dernières sorties</h3>
+          <button type="button" class="link o-all" id="o-all">tout voir</button>
+        </div>
+        <div class="card o-list" id="o-recent"></div>
+      </section>
+
+      <!-- ============ Objectif 365 : historique des sorties ============ -->
+      <section class="screen o-screen" id="screen-obj-runs" data-space="365" aria-label="Sorties">
+        <h2 class="title">Tes sorties</h2>
+        <p class="o-text" id="o-runs-sum"></p>
+        <div class="o-runs" id="o-runs"></div>
+        <p class="hint" id="o-runs-hint">Touche une sortie pour la modifier ou la supprimer</p>
+      </section>
+
+      <!-- ============ Objectif 365 : réglages ============ -->
+      <section class="screen o-screen" id="screen-obj-settings" data-space="365" aria-label="Réglages de l'objectif">
+        <h2 class="title">Réglages</h2>
+        <form class="o-form" id="o-form" novalidate>
+          <div class="card o-fields">
+            <label class="o-field"><span>Total de départ</span><span class="o-field-in"><input id="s-total" type="text" inputmode="decimal" autocomplete="off"> km</span></label>
+            <label class="o-field"><span>À la date du</span><input id="s-date" type="date"></label>
+            <label class="o-field"><span>Objectif</span><span class="o-field-in"><input id="s-goal" type="text" inputmode="decimal" autocomplete="off"> km</span></label>
+            <label class="o-field"><span>Année</span><input id="s-year" type="text" inputmode="numeric" autocomplete="off"></label>
+            <div class="o-field"><span>Sorties par semaine</span>
+              <div class="o-stepper small" data-target="s-runs">
+                <button type="button" class="o-step-btn" data-delta="-1" aria-label="Une sortie de moins">−</button>
+                <output id="s-runs">2</output>
+                <button type="button" class="o-step-btn" data-delta="1" aria-label="Une sortie de plus">+</button>
+              </div>
+            </div>
+          </div>
+          <p class="note o-form-note">Le total de départ, c'est ton chiffre Strava à cette date. Les sorties notées à partir de ce jour s'y ajoutent.</p>
+          <button type="submit" class="btn primary o-save">Enregistrer</button>
+        </form>
+
+        <h3>Sauvegarde</h3>
+        <p class="note">Tes sorties sont gardées uniquement sur ce téléphone, avec tes 11:10. Une seule sauvegarde contient les deux.</p>
+        <div class="settings-actions">
+          <button class="btn" id="o-export" type="button">Exporter mes données</button>
+          <button class="btn" id="o-import" type="button">Importer</button>
+        </div>
+      </section>
     </main>
 
-    <!-- ============ Barre d'onglets ============ -->
-    <nav class="tabbar" aria-label="Navigation">
+    <!-- ============ Objectif 365 : saisie rapide d'une sortie ============ -->
+    <form class="o-dock" id="o-dock" novalidate hidden>
+      <div class="o-add-field" id="o-add-field">
+        <input id="o-km" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0,0" aria-label="Kilomètres de la sortie">
+        <span class="o-unit">km</span>
+        <label class="o-date-chip"><span id="o-date-label">auj.</span><input id="o-date" type="date" aria-label="Date de la sortie"></label>
+      </div>
+      <button type="submit" class="o-go" id="o-go">Ajouter</button>
+    </form>
+
+    <!-- ============ Barre d'onglets 11:10 ============ -->
+    <nav class="tabbar" data-space="1110" aria-label="Navigation">
       <button class="tab active" data-screen="home" type="button">
         <!-- une horloge… arrêtée sur 11:10 -->
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 12l-1.6-4.4M12 12l4.2-2.3"/></svg>
@@ -138,6 +272,32 @@
         <span>Réglages</span>
       </button>
     </nav>
+
+    <!-- ============ Barre d'onglets Objectif 365 ============ -->
+    <nav class="tabbar" data-space="365" aria-label="Navigation Objectif 365" hidden>
+      <button class="tab" data-screen="obj" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        <span>Suivi</span>
+      </button>
+      <button class="tab" data-screen="obj-runs" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.6"/></svg>
+        <span>Sorties</span>
+      </button>
+      <button class="tab" data-screen="obj-settings" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        <span>Réglages</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Objectif 365 : les paliers fêtés -->
+  <div class="o-party" id="o-party" role="dialog" aria-modal="true" aria-labelledby="o-party-title" hidden>
+    <div class="o-party-card">
+      <p class="o-party-kicker" id="o-party-kicker"></p>
+      <p class="o-party-title" id="o-party-title"></p>
+      <p class="o-party-text" id="o-party-text"></p>
+      <button type="button" class="big-btn" id="o-party-ok">Continuer</button>
+    </div>
   </div>
 
   <!-- Pluie de cœurs -->
@@ -154,10 +314,16 @@
       <label class="time-wrap" id="dialog-time-wrap" hidden>
         <input type="time" id="dialog-time">
       </label>
+      <div class="dialog-fields" id="dialog-fields" hidden>
+        <label class="o-input"><input type="text" id="dialog-km" inputmode="decimal" autocomplete="off" aria-label="Kilomètres"><span>km</span></label>
+        <label class="o-input"><input type="date" id="dialog-date" aria-label="Date"></label>
+      </div>
       <div class="dialog-actions" id="dialog-actions"></div>
     </form>
   </dialog>
 
+  <script src="objectif.js"></script>
   <script src="app.js"></script>
+  <script src="objectif-ui.js"></script>
 </body>
 </html>

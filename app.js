@@ -489,6 +489,7 @@ function renderSettings() {
 
 async function exportData() {
   const data = { app: '11:10', format: 1, exportedAt: new Date().toISOString(), days };
+  if (typeof objExportData === 'function') data.objectif365 = objExportData();
   const json = JSON.stringify(data, null, 2);
   const name = '11h10-sauvegarde-' + todayKey() + '.json';
   const file = new File([json], name, { type: 'application/json' });
@@ -514,12 +515,14 @@ async function exportData() {
 }
 
 // Import : on AJOUTE les jours du fichier, on n'efface jamais ceux déjà présents
+// (les sorties d'Objectif 365 aussi, si le fichier en contient : un ancien fichier n'en a pas)
 async function importData(file) {
   try {
     const data = JSON.parse(await file.text());
     const incoming = cleanDays(data && data.days ? data.days : data);
     const entries = Object.entries(incoming);
-    if (!entries.length) {
+    const hasObj = !!(data && data.objectif365 && typeof objImportData === 'function');
+    if (!entries.length && !hasObj) {
       toast('Ce fichier ne contient aucun 11:10');
       return;
     }
@@ -529,8 +532,13 @@ async function importData(file) {
       else if (days[k] === null && v) { days[k] = v; } // complète une heure manquante
     }
     saveDays();
+    const runs = hasObj ? objImportData(data.objectif365) : 0;
     renderAll();
-    toast(added ? plural(added, 'jour') + ' ajouté' + (added > 1 ? 's' : '') : 'Tout était déjà là');
+    const parts = [];
+    if (added) parts.push(plural(added, 'jour') + ' ajouté' + (added > 1 ? 's' : ''));
+    if (runs) parts.push(plural(runs, 'sortie') + ' ajoutée' + (runs > 1 ? 's' : ''));
+    toast(parts.length ? parts.join(' · ') : 'Tout était déjà là');
+    if (typeof objAfterShow === 'function') showScreen(view[view.space]); // réglages importés : quitte la bienvenue
   } catch (e) {
     toast('Fichier illisible');
   }
@@ -559,25 +567,46 @@ function rainHearts(count = 30) {
   }
 }
 
+// Petit message en bas de l'écran ; avec { action, onAction } il porte un bouton (ex. « Annuler »)
 let toastTimer = null;
-function toast(msg) {
+function toast(msg, opts = {}) {
   const el = $('#toast');
   el.textContent = msg;
+  el.classList.toggle('has-action', !!opts.action);
+  if (opts.action) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast-btn';
+    b.textContent = opts.action;
+    b.addEventListener('click', () => {
+      clearTimeout(toastTimer);
+      el.classList.remove('show');
+      opts.onAction();
+    }, { once: true });
+    el.appendChild(b);
+  }
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => el.classList.remove('show'), opts.duration || 2400);
 }
 
-// Ouvre la fenêtre de dialogue et attend le choix : { value, time }
+// Ouvre la fenêtre de dialogue et attend le choix : { value, time, km, date }
+// (km et date : pour modifier une sortie d'Objectif 365)
 const dlg = $('#dialog');
 let dlgOpenedAt = 0;
-function ask({ title, text = '', time, buttons }) {
+function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
   return new Promise(resolve => {
     $('#dialog-title').textContent = title;
     $('#dialog-text').textContent = text;
     const input = $('#dialog-time');
     $('#dialog-time-wrap').hidden = time === undefined;
     input.value = time || '';
+    const kmIn = $('#dialog-km'), dateIn = $('#dialog-date');
+    $('#dialog-fields').hidden = km === undefined;
+    kmIn.value = km || '';
+    dateIn.value = date || '';
+    dateIn.min = dateMin || '';
+    dateIn.max = dateMax || '';
 
     // Répond une seule fois, que ce soit par un bouton, Échap ou un toucher à côté
     let done = false;
@@ -586,7 +615,7 @@ function ask({ title, text = '', time, buttons }) {
       if (done) return;
       done = true;
       dlg.removeEventListener('close', onClose);
-      resolve({ value, time: input.value });
+      resolve({ value, time: input.value, km: kmIn.value, date: dateIn.value });
     };
 
     const actions = $('#dialog-actions');
@@ -617,21 +646,57 @@ dlg.addEventListener('click', e => {
 
 /* ============================================================
    Navigation et démarrage
+   Deux espaces (11:10 et Objectif 365), chacun avec ses onglets.
+   L'app se rouvre là où on l'a laissée.
    ============================================================ */
+const VIEW_KEY = '1110.lastView';
+const SPACE_SCREENS = {
+  '1110': ['home', 'calendar', 'stats', 'settings'],
+  '365': ['obj', 'obj-runs', 'obj-settings', 'obj-welcome'],
+};
+
+function loadView() {
+  const v = { space: '1110', '1110': 'home', '365': 'obj' };
+  try {
+    const saved = JSON.parse(localStorage.getItem(VIEW_KEY) || '{}');
+    if (saved.space in SPACE_SCREENS) v.space = saved.space;
+    for (const sp in SPACE_SCREENS) if (SPACE_SCREENS[sp].includes(saved[sp])) v[sp] = saved[sp];
+  } catch (e) { /* rien */ }
+  return v;
+}
+const view = loadView();
+
+function saveView() {
+  try { localStorage.setItem(VIEW_KEY, JSON.stringify(view)); } catch (e) { /* rien */ }
+}
+
+const spaceOf = name => (SPACE_SCREENS['365'].includes(name) ? '365' : '1110');
+
 function showScreen(name) {
+  if (typeof objRoute === 'function') name = objRoute(name); // Objectif 365 pas encore réglé → bienvenue
+  const space = spaceOf(name);
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
   document.querySelectorAll('.tab').forEach(t => {
     const on = t.dataset.screen === name;
     t.classList.toggle('active', on);
     if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
   });
+  document.querySelectorAll('.tabbar').forEach(t => { t.hidden = t.dataset.space !== space; });
+  document.querySelectorAll('.space-btn').forEach(b => b.setAttribute('aria-selected', String(b.dataset.space === space)));
   $('#main').scrollTop = 0;
+  view.space = space;
+  view[space] = name;
+  saveView();
+  if (typeof objAfterShow === 'function') objAfterShow(name);
 }
+
+const showSpace = space => showScreen(view[space]);
 
 function renderAll() {
   renderHome();
   renderCalendar();
   renderStats();
+  if (typeof objRender === 'function') objRender();
 }
 
 // Vérifie chaque seconde l'heure… et le passage à minuit
@@ -658,6 +723,7 @@ function start() {
   applyMode();
   renderSettings();
   renderAll();
+  showScreen(view[view.space]);
   setupLongPress();
 
   $('#btn-1110').addEventListener('click', onMainButton);
@@ -665,6 +731,7 @@ function start() {
   $('#cal-prev').addEventListener('click', () => changeMonth(-1));
   $('#cal-next').addEventListener('click', () => changeMonth(1));
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showScreen(t.dataset.screen)));
+  document.querySelectorAll('.space-btn').forEach(b => b.addEventListener('click', () => showSpace(b.dataset.space)));
   $('#themes').addEventListener('click', e => {
     const b = e.target.closest('.theme-btn');
     if (b) setTheme(b.dataset.themeId);
