@@ -30,7 +30,8 @@
       try {
         theme = localStorage.getItem('1110.theme'); mode = localStorage.getItem('1110.mode');
         // 11:10 n'apparaît que s'il a été débloqué (ou s'il y a déjà des 11:10 sur ce téléphone)
-        open = localStorage.getItem('1110.debloque') === '1' || (localStorage.getItem('1110.days') || '{}').length > 2;
+        var flag = localStorage.getItem('1110.debloque'); // '1' débloqué, '0' caché exprès
+        open = flag === '1' || (flag !== '0' && (localStorage.getItem('1110.days') || '{}').length > 2);
       } catch (e) {}
       if (!open) root.classList.add('locked');
       if (theme) root.dataset.theme = theme;

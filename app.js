@@ -132,14 +132,46 @@ const has = key => Object.prototype.hasOwnProperty.call(days, key);
 const UNLOCK_KEY = '1110.debloque';
 const CODE_HASH = '6ebaa7f975e5218242d785fddc562a9f74dc17a9699c9e474c7436176b908cf7';
 
+// '1' = débloqué, '0' = caché exprès (appui long sur « 11:10 »), rien = selon les 11:10 du téléphone
 function isUnlocked() {
-  try { if (localStorage.getItem(UNLOCK_KEY) === '1') return true; } catch (e) { /* rien */ }
+  let flag = null;
+  try { flag = localStorage.getItem(UNLOCK_KEY); } catch (e) { /* rien */ }
+  if (flag === '1') return true;
+  if (flag === '0') return false;
   return Object.keys(days).length > 0;
 }
 
 function unlock() {
   try { localStorage.setItem(UNLOCK_KEY, '1'); } catch (e) { /* rien */ }
   document.documentElement.classList.remove('locked');
+}
+
+// Appui long sur « 11:10 » : on le cache à nouveau (les 11:10 restent sur le téléphone)
+async function hideSpace1110() {
+  const r = await ask({
+    title: 'Cacher 11:10 ?',
+    text: 'L’app redevient « Objectif 365 » tout court. Tes 11:10 restent bien gardés. Pour les retrouver : 5 appuis sur « Auto », puis le code.',
+    buttons: [{ label: 'Annuler', value: 'cancel' }, { label: 'Cacher', value: 'hide', style: 'primary' }],
+  });
+  if (r.value !== 'hide') return;
+  try { localStorage.setItem(UNLOCK_KEY, '0'); } catch (e) { /* rien */ }
+  document.documentElement.classList.add('locked');
+  renderAll();
+  showSpace('365');
+  toast('11:10 est caché');
+}
+
+function setupHideLongPress() {
+  const btn = document.querySelector('.space-btn[data-space="1110"]');
+  let timer = null;
+  const cancel = () => clearTimeout(timer);
+  btn.addEventListener('pointerdown', () => {
+    delete btn.dataset.longpress;
+    // (le marqueur empêche le clic qui suit l'appui long d'ouvrir aussi 11:10 : voir start())
+    timer = setTimeout(() => { btn.dataset.longpress = '1'; hideSpace1110(); }, 700);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => btn.addEventListener(t, cancel));
+  btn.addEventListener('contextmenu', e => e.preventDefault());
 }
 
 async function checkCode(code) {
@@ -789,7 +821,10 @@ function start() {
   $('#cal-prev').addEventListener('click', () => changeMonth(-1));
   $('#cal-next').addEventListener('click', () => changeMonth(1));
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showScreen(t.dataset.screen)));
-  document.querySelectorAll('.space-btn').forEach(b => b.addEventListener('click', () => showSpace(b.dataset.space)));
+  document.querySelectorAll('.space-btn').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.longpress) { delete b.dataset.longpress; return; } // c'était un appui long
+    showSpace(b.dataset.space);
+  }));
   document.querySelectorAll('[data-themes]').forEach(el => el.addEventListener('click', e => {
     const b = e.target.closest('.theme-btn');
     if (b) setTheme(b.dataset.themeId);
@@ -807,6 +842,7 @@ function start() {
     if (ok) ok.click();
   });
   if (isUnlocked()) unlock(); // (Alix a déjà des 11:10 : on retient que c'est débloqué)
+  setupHideLongPress();
   $('#btn-export').addEventListener('click', exportData);
   $('#btn-import').addEventListener('click', () => $('#file-import').click());
   $('#file-import').addEventListener('change', e => {

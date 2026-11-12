@@ -389,6 +389,7 @@ dialog[open] { animation: pop .25s ease-out; }
   background: var(--card);
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none; /* pas de menu iOS pendant l'appui long sur « 11:10 » */
 }
 .space-btn {
   min-height: 44px;
