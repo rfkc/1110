@@ -6,7 +6,7 @@
    ⚠️ À CHAQUE MODIFICATION DE L'APP : augmenter VERSION (v1 → v2 → v3…).
    C'est ce qui déclenche la mise à jour (et le rechargement) de l'app installée.
    ============================================================ */
-const VERSION = 'v9';
+const VERSION = 'v10';
 
 const CACHE = '1110-' + VERSION;
 const FONT_CACHE = '1110-polices';

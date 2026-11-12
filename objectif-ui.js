@@ -246,8 +246,7 @@ function renderFacts(r) {
     proj.textContent = '≈ ' + fmtKm(Math.round(r.projection)) + ' km';
     proj.classList.remove('soft');
   } else {
-    const wait = Math.max(1, 8 - r.joursEcoules);
-    proj.textContent = r.joursEcoules > 7 ? 'après 1 sortie' : 'dans ' + wait + ' j';
+    proj.textContent = 'bientôt'; // (la projection arrive après 7 jours et une première sortie)
     proj.classList.add('soft');
   }
 }
