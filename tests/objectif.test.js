@@ -44,6 +44,17 @@ test("la cible de la semaine ne bouge pas quand on ajoute une sortie en cours de
   close(apres.kmParSortie, apres.reste);
 });
 
+test('sorties par semaine : 2 par défaut, et la suggestion suit le réglage', () => {
+  assert.equal(O.defaultSettings('2026-11-12').sortiesParSemaine, 2);
+  const runs = [run('2026-11-16', 4)];
+  const deux = O.compute({ ...S, sortiesParSemaine: 2 }, runs, '2026-11-17').semaine;
+  const trois = O.compute({ ...S, sortiesParSemaine: 3 }, runs, '2026-11-17').semaine;
+  assert.equal(deux.sortiesRestantes, 1);
+  assert.equal(trois.sortiesRestantes, 2);
+  close(deux.kmParSortie, deux.reste);
+  close(trois.kmParSortie, trois.reste / 2);
+});
+
 test('le lundi suivant, la nouvelle cible part de ce qui reste vraiment', () => {
   const runs = [run('2026-11-16', 20)];
   const r = O.compute(S, runs, '2026-11-23');

@@ -50,7 +50,7 @@
       dateDepart: todayKey,
       objectif: 365,
       annee: Number(todayKey.slice(0, 4)),
-      sortiesParSemaine: 3,
+      sortiesParSemaine: 2,
     };
   }
 
@@ -223,7 +223,7 @@
     if (!isValidKey(r.dateDepart)) return null;
     if (!isNum(r.objectif) || r.objectif <= 0 || r.objectif > 100000) return null;
     if (!Number.isInteger(r.annee) || r.annee < 2000 || r.annee > 2200) return null;
-    const spw = Number.isInteger(r.sortiesParSemaine) && r.sortiesParSemaine >= 1 && r.sortiesParSemaine <= 14 ? r.sortiesParSemaine : 3;
+    const spw = Number.isInteger(r.sortiesParSemaine) && r.sortiesParSemaine >= 1 && r.sortiesParSemaine <= 14 ? r.sortiesParSemaine : 2;
     return { totalDepart: r.totalDepart, dateDepart: r.dateDepart, objectif: r.objectif, annee: r.annee, sortiesParSemaine: spw };
   }
 
