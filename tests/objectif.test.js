@@ -253,10 +253,10 @@ test('trophées : chacun fêté une seule fois, jamais ceux déjà dans le total
   assert.deepEqual(ids(O.newTrophies(301, S, [])), ['r300']);
   assert.deepEqual(ids(O.newTrophies(301, S, ['r300'])), []); // supprimée puis rajoutée : pas de 2e fête
   assert.deepEqual(ids(O.newTrophies(301, S, [300])), []);    // ancien format (km) reconnu
-  // 331 km : π (secret, 314,16), Tor des Géants (330) et 300 km ; les spéciaux passent avant le régulier
-  assert.deepEqual(ids(O.newTrophies(331, S, [])), ['x5', 'c15', 'r300']);
+  // 331 km : π (secret, 314,16), Tor des Géants (330), Berne (305) et 300 km ; les spéciaux passent avant le régulier
+  assert.deepEqual(ids(O.newTrophies(331, S, [])), ['x5', 'c15', 'e0', 'r300']);
   // 365 pour elle : l'objectif (qui vaut aussi « 1 km par jour »), en grande fête
-  const big = O.newTrophies(365, S, ['r300', 'r350', 'c15', 'x5']);
+  const big = O.newTrophies(365, S, ['r300', 'r350', 'c15', 'x5', 'e0', 'e1']);
   assert.deepEqual(ids(big), ['objectif']);
   assert.ok(big[0].big);
   // pour lui (1000 km), « 1 km par jour » à 365 est un trophée à part, en grande fête aussi
@@ -287,9 +287,9 @@ test('trophées : date de déblocage', () => {
 
 test('objectif de 1000 km : un palier tous les 100 km, sans fêter ceux déjà dépassés', () => {
   const R = { ...S, totalDepart: 838.9, objectif: 1000 };
-  assert.deepEqual(ids(O.newTrophies(845, R, [])), []);          // 800 était déjà passé au départ
-  assert.deepEqual(ids(O.newTrophies(901, R, [])), ['r900']);
-  assert.deepEqual(ids(O.newTrophies(1001, R, ['r900'])), ['objectif', 'x9']); // + Mille Bornes
+  assert.deepEqual(ids(O.newTrophies(845, R, [])), ['e7']);      // Bruxelles ; 800 était déjà passé au départ
+  assert.deepEqual(ids(O.newTrophies(901, R, [])), ['e8', 'e7', 'r900']); // + Ljubljana et Bruxelles
+  assert.deepEqual(ids(O.newTrophies(1001, R, ['r900', 'e7', 'e8'])), ['objectif', 'x9', 'e10', 'e9']); // + Mille Bornes, Amsterdam, Rome
   assert.equal(O.barStart(R), 790);
   assert.equal(O.barStart(S), 280); // la barre de 365 ne change pas
   const r = O.compute(R, [], '2026-11-12');

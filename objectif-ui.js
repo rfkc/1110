@@ -460,7 +460,7 @@ async function objEditRun(id) {
 /* ============================================================
    Trophées : les fêtes (moyenne, ou grande pour l'objectif et « 1 km par jour »)
    ============================================================ */
-const CAT_LABEL = { course: 'Course mythique', symbole: 'Symbolique', trajet: 'Trajet depuis Grenoble', secret: 'Trophée secret', regulier: 'Palier', objectif: 'Objectif' };
+const CAT_LABEL = { course: 'Course mythique', symbole: 'Symbolique', trajet: 'Trajet depuis Grenoble', europe: 'Voyage en Europe', secret: 'Trophée secret', regulier: 'Palier', objectif: 'Objectif' };
 
 function objCheckMilestones() {
   const s = obj.reglages;
@@ -514,6 +514,7 @@ const TR_SECTIONS = [
   ['course', 'Courses mythiques'],
   ['symbole', 'Symboliques'],
   ['trajet', 'Trajets depuis Grenoble'],
+  ['europe', 'Europe depuis Grenoble'],
   ['secret', 'Secrets'],
 ];
 

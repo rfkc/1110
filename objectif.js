@@ -198,6 +198,16 @@
   const TRAJETS = [
     [55, 'Chambéry'], [110, 'Lyon'], [170, 'Sainte-Sigolène'], [530, 'Toulouse'], [576, 'Paris'],
   ];
+  // Capitales (et grandes villes) d'Europe qu'on peut rejoindre à pied depuis Grenoble ; km par la route, environ
+  const EUROPE = [
+    [305, '🇨🇭', 'Berne', 'Suisse'], [340, '🇲🇨', 'Monaco', 'Monaco'], [540, '🇱🇮', 'Vaduz', 'Liechtenstein'],
+    [640, '🇦🇩', 'Andorre-la-Vieille', 'Andorre'], [650, '🇱🇺', 'Luxembourg', 'Luxembourg'], [660, '🇪🇸', 'Barcelone', 'Espagne'],
+    [710, '🇸🇲', 'Saint-Marin', 'Saint-Marin'], [840, '🇧🇪', 'Bruxelles', 'Belgique'], [890, '🇸🇮', 'Ljubljana', 'Slovénie'],
+    [930, '🇮🇹', 'Rome', 'Italie'], [1000, '🇳🇱', 'Amsterdam', 'Pays-Bas'], [1030, '🇭🇷', 'Zagreb', 'Croatie'],
+    [1120, '🇨🇿', 'Prague', 'Tchéquie'], [1170, '🇦🇹', 'Vienne', 'Autriche'], [1230, '🇸🇰', 'Bratislava', 'Slovaquie'],
+    [1250, '🇩🇪', 'Berlin', 'Allemagne'], [1280, '🇪🇸', 'Madrid', 'Espagne'], [1400, '🇭🇺', 'Budapest', 'Hongrie'],
+    [1450, '🇩🇰', 'Copenhague', 'Danemark'], [1700, '🇵🇱', 'Varsovie', 'Pologne'], [1900, '🇵🇹', 'Lisbonne', 'Portugal'],
+  ];
   const SECRETS = [
     [1, '👟', 'Première foulée', 'Le premier kilomètre de l’année. Tout commence ici !'],
     [42, '🌌', '42', 'la réponse à la grande question sur la vie, l’univers et le reste !'],
@@ -212,7 +222,7 @@
     [1110, '💕', 'L’heure parfaite', '11:10, l’heure parfaite, en kilomètres.'],
   ];
   const kmLabel = km => fmtKm(km) + ' km';
-  const PRIORITY = { objectif: 100, symbole: 60, secret: 55, course: 50, trajet: 50, regulier: 10 };
+  const PRIORITY = { objectif: 100, symbole: 60, secret: 55, course: 50, trajet: 50, europe: 50, regulier: 10 };
 
   // Tous les trophées de l'année, du plus court au plus long
   function trophies(settings) {
@@ -228,6 +238,8 @@
     add('s-3', 'symbole', days * 3, '🚀', '3 km par jour', kmLabel(days * 3) + ' : 3 km pour chaque jour de l’année !');
     if (s.objectif !== days) add('s-mi', 'symbole', s.objectif / 2, '🧭', 'À mi-chemin', kmLabel(s.objectif / 2) + ' : la moitié de ton objectif de ' + kmLabel(s.objectif) + ' !');
     TRAJETS.forEach(([km, ville], i) => add('t' + i, 'trajet', km, '🗺️', ville, kmLabel(km) + ' : en courant, tu aurais pu aller de Grenoble à ' + ville + ' !'));
+    EUROPE.forEach(([km, flag, ville, pays], i) => add('e' + i, 'europe', km, flag, ville,
+      kmLabel(km) + ' : en courant, tu aurais pu aller de Grenoble à ' + ville + (ville === pays ? '' : ' (' + pays + ')') + ' !'));
     add('t-lille', 'trajet', 804.7, '🎵', 'Lille · 500 miles', '804,7 km, soit 500 miles : autant que Grenoble → Lille ! « I would walk 500 miles »… toi, tu les as courus.');
     SECRETS.forEach(([km, icon, name, text], i) => add('x' + i, 'secret', km, icon, name, (km === 1 || text.includes(' km : ') ? '' : kmLabel(km) + ' : ') + text));
     milestones(s.objectif).slice(0, -1).forEach(km =>
