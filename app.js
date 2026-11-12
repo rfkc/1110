@@ -610,7 +610,8 @@ function ask({ title, text = '', time, km, date, dateMin, dateMax, buttons }) {
 
     // Répond une seule fois, que ce soit par un bouton, Échap ou un toucher à côté
     let done = false;
-    const onClose = () => finish('');
+    // (si la fenêtre est ouverte, ce « fermé » vient de la fenêtre d'avant, arrivé en retard : on l'ignore)
+    const onClose = () => { if (!dlg.open) finish(''); };
     const finish = value => {
       if (done) return;
       done = true;
