@@ -146,7 +146,7 @@ function renderMood(r, s, today, from) {
   mood.classList.toggle('warn', tone === 'warn');
   mood.classList.toggle('done', tone === 'done');
   $('#o-kicker').textContent = cap(fmtDayLong.format(dateOf(today))) + ' · ' + humeur;
-  $('#o-wm').textContent = fmtKm(s.objectif);
+  $('#o-wm').textContent = String(Math.round(s.objectif)); // l'objectif, en filigrane (sans espace : 1000)
 
   const leadEl = $('#o-lead');
   leadEl.innerHTML = lead;

@@ -431,7 +431,7 @@ dialog[open] { animation: pop .25s ease-out; }
 /* deux fonds superposés : on passe de l'un à l'autre en fondu */
 .o-mood::before, .o-mood::after {
   content: '';
-  position: absolute; inset: 0; z-index: -1;
+  position: absolute; inset: 0; z-index: -2; /* sous le filigrane (-1) */
   transition: opacity .8s ease;
 }
 .o-mood::before { background: radial-gradient(120% 90% at 100% 0%, var(--ok-soft) 0%, var(--ok-2) 70%); }
@@ -444,10 +444,15 @@ dialog[open] { animation: pop .25s ease-out; }
 .o-wm {
   position: absolute; right: -14px; top: -34px; z-index: -1;
   font: 400 150px/1 'Fraunces', Georgia, serif;
-  color: var(--tone); opacity: .07;
-  transition: color .8s;
+  color: var(--tone); opacity: .09;
+  transition: color .8s, opacity .8s;
   pointer-events: none;
 }
+/* sur les fonds pêche et rose, il faut un peu plus d'encre pour le voir autant */
+.o-mood.warn .o-wm { opacity: .16; }
+.o-mood.done .o-wm { opacity: .14; }
+:root[data-dark] .o-mood .o-wm { opacity: .12; }
+:root[data-dark] .o-mood.warn .o-wm { opacity: .16; }
 .o-kicker {
   display: flex; align-items: center; gap: 8px;
   margin: 0 0 10px;
