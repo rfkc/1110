@@ -473,18 +473,22 @@ function updateThemeColor() {
   if (meta && bg) meta.content = bg;
 }
 
+// Apparence et couleurs : affichées dans les Réglages de 11:10 et dans ceux d'Objectif 365
 function renderSettings() {
   const mode = currentMode();
-  $('#modes').innerHTML = MODES.map(m =>
+  const modesHtml = MODES.map(m =>
     '<button type="button" class="mode-btn' + (m.id === mode ? ' selected' : '') + '" data-mode-id="' + m.id + '" aria-pressed="' + (m.id === mode) + '">' + m.name + '</button>'
   ).join('');
 
   const cur = currentTheme();
-  $('#themes').innerHTML = THEMES.map(t =>
+  const themesHtml = THEMES.map(t =>
     '<button type="button" class="theme-btn' + (t.id === cur ? ' selected' : '') + '" data-theme-id="' + t.id + '" aria-pressed="' + (t.id === cur) + '">'
     + '<span class="swatch"><i style="background:' + t.swatch[0] + '"></i><i style="background:' + t.swatch[1] + '"></i></span>'
     + t.name + '</button>'
   ).join('');
+
+  document.querySelectorAll('[data-modes]').forEach(el => { el.innerHTML = modesHtml; });
+  document.querySelectorAll('[data-themes]').forEach(el => { el.innerHTML = themesHtml; });
 }
 
 async function exportData() {
@@ -653,7 +657,7 @@ dlg.addEventListener('click', e => {
 const VIEW_KEY = '1110.lastView';
 const SPACE_SCREENS = {
   '1110': ['home', 'calendar', 'stats', 'settings'],
-  '365': ['obj', 'obj-runs', 'obj-settings', 'obj-welcome'],
+  '365': ['obj', 'obj-runs', 'obj-trophies', 'obj-settings', 'obj-welcome'],
 };
 
 function loadView() {
@@ -733,14 +737,14 @@ function start() {
   $('#cal-next').addEventListener('click', () => changeMonth(1));
   document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showScreen(t.dataset.screen)));
   document.querySelectorAll('.space-btn').forEach(b => b.addEventListener('click', () => showSpace(b.dataset.space)));
-  $('#themes').addEventListener('click', e => {
+  document.querySelectorAll('[data-themes]').forEach(el => el.addEventListener('click', e => {
     const b = e.target.closest('.theme-btn');
     if (b) setTheme(b.dataset.themeId);
-  });
-  $('#modes').addEventListener('click', e => {
+  }));
+  document.querySelectorAll('[data-modes]').forEach(el => el.addEventListener('click', e => {
     const b = e.target.closest('.mode-btn');
     if (b) setMode(b.dataset.modeId);
-  });
+  }));
   $('#btn-export').addEventListener('click', exportData);
   $('#btn-import').addEventListener('click', () => $('#file-import').click());
   $('#file-import').addEventListener('change', e => {

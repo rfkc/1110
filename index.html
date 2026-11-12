@@ -107,10 +107,10 @@
         <h2 class="title">Réglages</h2>
 
         <h3>Apparence</h3>
-        <div class="modes" id="modes" role="group" aria-label="Apparence"></div>
+        <div class="modes" id="modes" data-modes role="group" aria-label="Apparence"></div>
 
         <h3>Couleurs</h3>
-        <div class="themes" id="themes"></div>
+        <div class="themes" id="themes" data-themes></div>
 
         <h3>Sauvegarde</h3>
         <p class="note">Tes 11:10 sont gardés uniquement sur ce téléphone. Exporte-les de temps en temps (par exemple dans Fichiers ou par mail), pour ne rien perdre si tu changes de téléphone.</p>
@@ -212,6 +212,13 @@
         <p class="hint" id="o-runs-hint">Touche une sortie pour la modifier ou la supprimer</p>
       </section>
 
+      <!-- ============ Objectif 365 : trophées ============ -->
+      <section class="screen o-screen" id="screen-obj-trophies" data-space="365" aria-label="Trophées">
+        <h2 class="title">Trophées</h2>
+        <p class="o-text" id="o-tr-sum"></p>
+        <div id="o-trophies"></div>
+      </section>
+
       <!-- ============ Objectif 365 : réglages ============ -->
       <section class="screen o-screen" id="screen-obj-settings" data-space="365" aria-label="Réglages de l'objectif">
         <h2 class="title">Réglages</h2>
@@ -232,6 +239,12 @@
           <p class="note o-form-note">Le total de départ, c'est ton chiffre Strava à cette date. Les sorties notées à partir de ce jour s'y ajoutent.</p>
           <button type="submit" class="btn primary o-save">Enregistrer</button>
         </form>
+
+        <h3>Apparence</h3>
+        <div class="modes" data-modes role="group" aria-label="Apparence"></div>
+
+        <h3>Couleurs</h3>
+        <div class="themes" data-themes></div>
 
         <h3>Sauvegarde</h3>
         <p class="note">Tes sorties sont gardées uniquement sur ce téléphone, avec tes 11:10. Une seule sauvegarde contient les deux.</p>
@@ -283,6 +296,10 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.6"/></svg>
         <span>Sorties</span>
       </button>
+      <button class="tab" data-screen="obj-trophies" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M8.5 20h7M10 17h4"/></svg>
+        <span>Trophées</span>
+      </button>
       <button class="tab" data-screen="obj-settings" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
         <span>Réglages</span>
@@ -294,8 +311,10 @@
   <div class="o-party" id="o-party" role="dialog" aria-modal="true" aria-labelledby="o-party-title" hidden>
     <div class="o-party-card">
       <p class="o-party-kicker" id="o-party-kicker"></p>
+      <p class="o-party-icon" id="o-party-icon" aria-hidden="true"></p>
       <p class="o-party-title" id="o-party-title"></p>
       <p class="o-party-text" id="o-party-text"></p>
+      <ul class="o-party-list" id="o-party-list"></ul>
       <button type="button" class="big-btn" id="o-party-ok">Continuer</button>
     </div>
   </div>

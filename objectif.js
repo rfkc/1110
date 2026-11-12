@@ -54,13 +54,13 @@
     };
   }
 
-  // Paliers fêtés, puis l'objectif lui-même :
-  // - objectif de 500 km ou plus : tous les 100 km (100, 200… 900, 1000)
-  // - sinon : 300, 333 et 350 (s'ils sont sous l'objectif)
+  // Paliers réguliers : tous les 50 km (objectif jusqu'à 500 km) ou tous les 100 km (au-delà)
+  const stepOf = objectif => (objectif <= 500 ? 50 : 100);
+
+  // Paliers réguliers puis l'objectif lui-même (ceux de la barre de progression)
   function milestones(objectif) {
     const list = [];
-    if (objectif >= 500) for (let m = 100; m < objectif; m += 100) list.push(m);
-    else [300, 333, 350].forEach(m => { if (m < objectif) list.push(m); });
+    for (let m = stepOf(objectif); m < objectif; m += stepOf(objectif)) list.push(m);
     return list.concat([objectif]);
   }
 
@@ -174,10 +174,89 @@
   }
 
   /* ---------- Paliers à fêter ---------- */
-  // Ceux qu'on vient d'atteindre, jamais fêtés, et pas déjà dépassés au départ
-  function newMilestones(total, settings, dejaFetes) {
-    return milestones(settings.objectif)
-      .filter(m => m > settings.totalDepart && total >= m && !dejaFetes.includes(m));
+  /* ---------- Trophées ---------- */
+  // cat : course (courses mythiques), symbole, trajet (depuis Grenoble), secret, regulier, objectif
+  const COURSES = [
+    [21.1, '🏅', 'Semi-marathon', 'la distance d’un semi-marathon, courue depuis le 1er janvier !'],
+    [42.195, '🏅', 'Marathon', 'la distance d’un marathon, courue depuis le 1er janvier !'],
+    [65, '⛰️', '6000D', 'autant que la 6000D, le trail mythique de La Plagne !'],
+    [80.5, '🔥', '50 miles', 'soit 50 miles : une vraie distance d’ultra !'],
+    [81, '🌙', 'SaintéLyon', 'la SaintéLyon, de Saint-Étienne à Lyon, de nuit !'],
+    [89, '🦁', 'Comrades', 'la Comrades, le plus vieil ultra du monde, en Afrique du Sud !'],
+    [149, '🏔️', 'Échappée Belle', 'l’Échappée Belle, la traversée de Belledonne, juste à côté de chez toi !'],
+    [160.9, '💯', '100 miles', 'soit 100 miles : le Graal des ultra-traileurs !'],
+    [161.3, '🌲', 'Western States', 'la Western States, le plus vieux 100 miles du monde, en Californie !'],
+    [165, '⛏️', 'Hardrock', 'la Hardrock 100, dans les montagnes du Colorado !'],
+    [171, '🗻', 'UTMB', 'l’UTMB, le tour du Mont-Blanc !'],
+    [175, '🌋', 'Diagonale des Fous', 'la Diagonale des Fous, la traversée de La Réunion !'],
+    [246, '🏛️', 'Spartathlon', 'le Spartathlon, d’Athènes à Sparte, comme Philippidès !'],
+    [250, '🐪', 'Marathon des Sables', 'le Marathon des Sables, à travers le Sahara !'],
+    [286, '🌊', 'L’Isère', 'toute la longueur de l’Isère, de sa source jusqu’au Rhône !'],
+    [330, '🦣', 'Tor des Géants', 'le Tor des Géants, le tour de la vallée d’Aoste !'],
+    [650, '🥾', 'GR5', 'la Grande Traversée des Alpes, du Léman à Nice !'],
+  ];
+  const TRAJETS = [
+    [55, 'Chambéry'], [110, 'Lyon'], [170, 'Sainte-Sigolène'], [530, 'Toulouse'], [576, 'Paris'],
+  ];
+  const SECRETS = [
+    [1, '👟', 'Première foulée', 'Le premier kilomètre de l’année. Tout commence ici !'],
+    [42, '🌌', '42', 'la réponse à la grande question sur la vie, l’univers et le reste !'],
+    [69, '😏', '69', 'on ne dira rien. 😏'],
+    [111, '🕚', '11:10', 'ça ne te rappelle pas une certaine heure ? 11:10 ♥'],
+    [123, '🚦', '1, 2, 3', '1, 2, 3… partez !'],
+    [314.16, '🥧', 'π', '314,16 km : π × 100, un chiffre bien rond !'],
+    [404, '🤖', 'Erreur 404', 'erreur 404 : fatigue introuvable.'],
+    [666, '😈', 'Diabolique', 'une course diabolique !'],
+    [777, '🎰', 'Jackpot', 'jackpot !'],
+    [1000, '🚗', 'Mille Bornes', 'comme au Mille Bornes, partie gagnée !'],
+    [1110, '💕', 'L’heure parfaite', '11:10, l’heure parfaite, en kilomètres.'],
+  ];
+  const kmLabel = km => fmtKm(km) + ' km';
+  const PRIORITY = { objectif: 100, symbole: 60, secret: 55, course: 50, trajet: 50, regulier: 10 };
+
+  // Tous les trophées de l'année, du plus court au plus long
+  function trophies(settings) {
+    const s = settings, days = daysInYear(s.annee), list = [];
+    const add = (id, cat, km, icon, name, text, big) => list.push({ id, cat, km, icon, name, text, big: !!big });
+
+    COURSES.forEach(([km, icon, name, text], i) => add('c' + i, 'course', km, icon, name, kmLabel(km) + ' : ' + text));
+    add('s-semaine', 'symbole', 52, '📅', '1 km par semaine', '52 km : 1 km pour chacune des 52 semaines de l’année !');
+    add('s-demi', 'symbole', days / 2, '🌗', 'Un demi-km par jour', kmLabel(days / 2) + ' : 500 m pour chaque jour de l’année !');
+    // (si l'objectif est 365, « 1 km par jour » et l'objectif ne font qu'un : la fête de l'objectif reprend la phrase)
+    if (s.objectif !== days) add('s-1', 'symbole', days, '☀️', '1 km par jour', kmLabel(days) + ' : 1 km pour chaque jour de l’année ! Ta moyenne d’1 km par jour est assurée.', true);
+    add('s-2', 'symbole', days * 2, '✌️', '2 km par jour', kmLabel(days * 2) + ' : 2 km pour chaque jour de l’année !');
+    add('s-3', 'symbole', days * 3, '🚀', '3 km par jour', kmLabel(days * 3) + ' : 3 km pour chaque jour de l’année !');
+    if (s.objectif !== days) add('s-mi', 'symbole', s.objectif / 2, '🧭', 'À mi-chemin', kmLabel(s.objectif / 2) + ' : la moitié de ton objectif de ' + kmLabel(s.objectif) + ' !');
+    TRAJETS.forEach(([km, ville], i) => add('t' + i, 'trajet', km, '🗺️', ville, kmLabel(km) + ' : en courant, tu aurais pu aller de Grenoble à ' + ville + ' !'));
+    add('t-lille', 'trajet', 804.7, '🎵', 'Lille · 500 miles', '804,7 km, soit 500 miles : autant que Grenoble → Lille ! « I would walk 500 miles »… toi, tu les as courus.');
+    SECRETS.forEach(([km, icon, name, text], i) => add('x' + i, 'secret', km, icon, name, (km === 1 || text.includes(' km : ') ? '' : kmLabel(km) + ' : ') + text));
+    milestones(s.objectif).slice(0, -1).forEach(km =>
+      add('r' + km, 'regulier', km, '📍', kmLabel(km), kmLabel(km) + ' ! Plus que ' + kmLabel(s.objectif - km) + ' avant ton objectif.'));
+    add('objectif', 'objectif', s.objectif, '🏆', 'Objectif ' + s.annee, kmLabel(s.objectif) + ' en ' + s.annee + ' : objectif atteint !', true);
+
+    return list.sort((a, b) => a.km - b.km || PRIORITY[b.cat] - PRIORITY[a.cat]);
+  }
+
+  const alreadyFeted = (t, fetes) => fetes.includes(t.id) || fetes.includes(t.km); // (anciens paliers notés en km)
+
+  // Ceux qu'on vient d'atteindre, jamais fêtés et pas déjà dépassés au départ, du plus important au moins important
+  function newTrophies(total, settings, fetes) {
+    return trophies(settings)
+      .filter(t => t.km > settings.totalDepart && total >= t.km && !alreadyFeted(t, fetes))
+      .sort((a, b) => (b.big - a.big) || PRIORITY[b.cat] - PRIORITY[a.cat] || b.km - a.km);
+  }
+
+  // Date de déblocage de chaque trophée : 'depart' (déjà dans le total de départ), une date, ou null
+  function unlockDates(settings, runs, todayKey) {
+    const c = curve(settings, runs, todayKey);
+    const yearStart = dayNumber(settings.annee + '-01-01');
+    const out = {};
+    trophies(settings).forEach(t => {
+      if (t.km <= settings.totalDepart) { out[t.id] = 'depart'; return; }
+      const p = c.points.find(x => x.total >= t.km);
+      out[t.id] = p ? keyOfNumber(yearStart + p.jour) : null;
+    });
+    return out;
   }
 
   // Début de la barre de progression : juste avant le total de départ (ou le 1er palier à venir)
@@ -255,7 +334,9 @@
       seen.add(r.id);
       out.sorties.push({ id: r.id, date: r.date, km: r.km });
     });
-    out.paliersFetes = (Array.isArray(obj.paliersFetes) ? obj.paliersFetes : []).filter(isNum);
+    // trophées déjà fêtés : leur identifiant (ou, pour les anciens paliers, leur km)
+    out.paliersFetes = (Array.isArray(obj.paliersFetes) ? obj.paliersFetes : [])
+      .filter(v => isNum(v) || (typeof v === 'string' && ID_RE.test(v)));
     return out;
   }
 
@@ -284,7 +365,8 @@
 
   return {
     keyOf, dayNumber, keyOfNumber, isValidKey, weekday, daysInYear,
-    defaultSettings, milestones, compute, curve, newMilestones, barStart,
+    defaultSettings, milestones, compute, curve, barStart,
+    trophies, newTrophies, unlockDates,
     parseKm, checkDate, MESSAGES,
     emptyData, cleanData, cleanSettings, mergeData, newId,
     fmtKm, fmtKmJour,

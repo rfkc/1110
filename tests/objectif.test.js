@@ -239,22 +239,57 @@ test('dates de sortie : pas dans le futur, ni hors de l\'année, ni avant le dé
   assert.equal(O.checkDate('', S, '2026-11-20'), 'date');
 });
 
-test('paliers : chacun fêté une seule fois', () => {
-  assert.deepEqual(O.milestones(365), [300, 333, 350, 365]);
-  assert.deepEqual(O.milestones(320), [300, 320]);
-  assert.deepEqual(O.newMilestones(295, S, []), []);
-  assert.deepEqual(O.newMilestones(301, S, []), [300]);
-  assert.deepEqual(O.newMilestones(301, S, [300]), []); // supprimée puis rajoutée : pas de 2e fête
-  assert.deepEqual(O.newMilestones(372, S, [300, 333]), [350, 365]);
+const ids = list => list.map(t => t.id);
+
+test('paliers réguliers : tous les 50 km jusqu’à 500 km d’objectif, tous les 100 km au-delà', () => {
+  assert.deepEqual(O.milestones(365), [50, 100, 150, 200, 250, 300, 350, 365]);
+  assert.deepEqual(O.milestones(500), [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]);
+  assert.deepEqual(O.milestones(1000), [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
+  assert.deepEqual(O.milestones(550), [100, 200, 300, 400, 500, 550]);
+});
+
+test('trophées : chacun fêté une seule fois, jamais ceux déjà dans le total de départ', () => {
+  assert.deepEqual(ids(O.newTrophies(295, S, [])), []);
+  assert.deepEqual(ids(O.newTrophies(301, S, [])), ['r300']);
+  assert.deepEqual(ids(O.newTrophies(301, S, ['r300'])), []); // supprimée puis rajoutée : pas de 2e fête
+  assert.deepEqual(ids(O.newTrophies(301, S, [300])), []);    // ancien format (km) reconnu
+  // 331 km : π (secret, 314,16), Tor des Géants (330) et 300 km ; les spéciaux passent avant le régulier
+  assert.deepEqual(ids(O.newTrophies(331, S, [])), ['x5', 'c15', 'r300']);
+  // 365 pour elle : l'objectif (qui vaut aussi « 1 km par jour »), en grande fête
+  const big = O.newTrophies(365, S, ['r300', 'r350', 'c15', 'x5']);
+  assert.deepEqual(ids(big), ['objectif']);
+  assert.ok(big[0].big);
+  // pour lui (1000 km), « 1 km par jour » à 365 est un trophée à part, en grande fête aussi
+  const R = { ...S, totalDepart: 0, objectif: 1000 };
+  assert.ok(O.trophies(R).find(t => t.id === 's-1').big);
+  assert.ok(O.trophies(R).find(t => t.id === 's-mi'));
+});
+
+test('trophées : la liste complète, sans identifiant en double', () => {
+  const all = O.trophies(S);
+  assert.equal(new Set(ids(all)).size, all.length);
+  all.forEach(t => assert.match(t.id, /^[\w-]{1,40}$/));
+  for (let i = 1; i < all.length; i++) assert.ok(all[i - 1].km <= all[i].km); // triés par km
+  assert.equal(all.find(x => x.id === 's-1'), undefined); // fusionné avec l'objectif de 365
+  assert.equal(all.find(x => x.id === 's-mi'), undefined); // = « un demi-km par jour »
+  const t = O.trophies({ ...S, annee: 2028 }).find(x => x.id === 's-1');
+  assert.equal(t.km, 366); // année bissextile : « 1 km par jour » = 366 km
+  assert.ok(O.trophies(S).find(x => x.id === 't-lille').text.includes('500 miles'));
+});
+
+test('trophées : date de déblocage', () => {
+  const runs = [run('2026-11-13', 4), run('2026-11-15', 3)];
+  const d = O.unlockDates(S, runs, '2026-11-20');
+  assert.equal(d['r250'], 'depart');      // déjà dans les 295 km
+  assert.equal(d['r300'], '2026-11-15');  // 295 + 4 = 299, puis 302
+  assert.equal(d['r350'], null);
 });
 
 test('objectif de 1000 km : un palier tous les 100 km, sans fêter ceux déjà dépassés', () => {
   const R = { ...S, totalDepart: 838.9, objectif: 1000 };
-  assert.deepEqual(O.milestones(1000), [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]);
-  assert.deepEqual(O.milestones(550), [100, 200, 300, 400, 500, 550]);
-  assert.deepEqual(O.newMilestones(845, R, []), []);          // 800 était déjà passé au départ
-  assert.deepEqual(O.newMilestones(901, R, []), [900]);
-  assert.deepEqual(O.newMilestones(1001, R, [900]), [1000]);
+  assert.deepEqual(ids(O.newTrophies(845, R, [])), []);          // 800 était déjà passé au départ
+  assert.deepEqual(ids(O.newTrophies(901, R, [])), ['r900']);
+  assert.deepEqual(ids(O.newTrophies(1001, R, ['r900'])), ['objectif', 'x9']); // + Mille Bornes
   assert.equal(O.barStart(R), 790);
   assert.equal(O.barStart(S), 280); // la barre de 365 ne change pas
   const r = O.compute(R, [], '2026-11-12');
@@ -278,7 +313,7 @@ test('données : nettoyage et import sans rien perdre', () => {
     reglages: S,
     sorties: [{ id: 'a', date: '2026-11-13', km: 5 }, { id: 'a', date: '2026-11-14', km: 3 },
       { id: 'b', date: 'n importe', km: 3 }, { id: 'c', date: '2026-11-14', km: -2 }, null],
-    paliersFetes: [300, 'x'],
+    paliersFetes: [300, '<x>'],
   });
   assert.equal(d.sorties.length, 1);
   assert.deepEqual(d.paliersFetes, [300]);

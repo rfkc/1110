@@ -114,6 +114,7 @@ function objRender(opts = {}) {
   renderChart(s, today);
   renderRecent();
   renderRunsList();
+  renderTrophies();
 
   objLast = {
     total: r.total, kmParJour: r.kmParJour, ecart: r.ecart, retard: -r.ecart, depassement: r.depassement,
@@ -457,33 +458,122 @@ async function objEditRun(id) {
 }
 
 /* ============================================================
-   Paliers : 300, 333, 350… et la grande fête à l'objectif
+   Trophées : les fêtes (moyenne, ou grande pour l'objectif et « 1 km par jour »)
    ============================================================ */
+const CAT_LABEL = { course: 'Course mythique', symbole: 'Symbolique', trajet: 'Trajet depuis Grenoble', secret: 'Trophée secret', regulier: 'Palier', objectif: 'Objectif' };
+
 function objCheckMilestones() {
   const s = obj.reglages;
   const r = O.compute(s, obj.sorties, todayKey());
-  const fresh = O.newMilestones(r.total, s, obj.paliersFetes);
+  const fresh = O.newTrophies(r.total, s, obj.paliersFetes);
   if (!fresh.length) return;
-  obj.paliersFetes.push(...fresh);   // chacun n'est fêté qu'une fois, même après une suppression
+  obj.paliersFetes.push(...fresh.map(t => t.id)); // chacun n'est fêté qu'une fois, même après une suppression
   objSave();
-  const m = Math.max.apply(null, fresh);
-  setTimeout(() => celebrate(m, r), reduceMotion() ? 0 : 900); // après la montée de la barre
+  renderTrophies();
+  setTimeout(() => celebrate(fresh), reduceMotion() ? 0 : 900); // après la montée de la barre
 }
 
-function celebrate(m, r) {
+// Une seule carte, même si la sortie débloque plusieurs trophées d'un coup
+function celebrate(list) {
   const s = obj.reglages;
-  const big = m === s.objectif;
+  const main = list[0];                       // le plus important (déjà trié)
+  let others = list.slice(1);
+  const big = main.big;
   const box = $('#o-party');
   box.classList.toggle('big', big);
-  $('#o-party-kicker').textContent = big ? 'Objectif ' + s.annee : 'Palier';
-  $('#o-party-title').textContent = fmtKm(m) + ' km';
-  $('#o-party-text').textContent = big
-    ? 'Tu l’as fait ! ' + fmtKm(s.objectif) + ' km en ' + s.annee + '. Chaque sortie compte, et tu les as toutes faites. Gros bisous ma vie ♥'
-    : 'Plus que ' + fmtKm(Math.max(0, s.objectif - r.total)) + ' km. Continue comme ça !';
+
+  let text = main.text;
+  if (main.id === 'objectif') {
+    text = 'Tu l’as fait ! ' + fmtKm(s.objectif) + ' km en ' + s.annee + '. Chaque sortie compte, et tu les as toutes faites.';
+    if (s.objectif === O.daysInYear(s.annee)) text += ' 1 km pour chaque jour de l’année !';
+    text += ' Gros bisous ma vie ♥';
+  }
+
+  $('#o-party-kicker').textContent = others.length ? (others.length + 1) + ' trophées débloqués !'
+    : main.id === 'objectif' ? 'Objectif ' + s.annee : CAT_LABEL[main.cat];
+  $('#o-party-icon').textContent = main.icon;
+  $('#o-party-title').textContent = main.cat === 'regulier' || main.cat === 'objectif' || main.cat === 'symbole'
+    ? fmtKm(main.km) + ' km' : main.name;
+  $('#o-party-text').textContent = text;
+
+  const shown = others.slice(0, 4);
+  $('#o-party-list').innerHTML = shown.map(t =>
+    '<li><span aria-hidden="true">' + t.icon + '</span><b>' + t.name + '</b><em>' + fmtKm(t.km) + ' km</em></li>'
+  ).join('') + (others.length > shown.length
+    ? '<li class="more">+ ' + (others.length - shown.length) + ' autre' + (others.length - shown.length > 1 ? 's' : '') + ' à découvrir dans Trophées</li>' : '');
+  $('#o-party-list').hidden = !others.length;
+
   box.hidden = false;
-  rainHearts(big ? 90 : 28);
+  rainHearts(big ? 90 : 45);
   if (big) setTimeout(() => rainHearts(50), 1600);
   $('#o-party-ok').focus();
+}
+
+/* ---------- L'onglet Trophées ---------- */
+const TR_SECTIONS = [
+  ['course', 'Courses mythiques'],
+  ['symbole', 'Symboliques'],
+  ['trajet', 'Trajets depuis Grenoble'],
+  ['secret', 'Secrets'],
+];
+
+function trophyState(t, total, dates) {
+  const d = dates[t.id];
+  if (total >= t.km) return { on: true, sub: d === 'depart' ? 'au départ' : d ? 'le ' + fmtDayMonth.format(dateOf(d)) : '' };
+  return { on: false, sub: 'encore ' + fmtKm(t.km - total) + ' km' };
+}
+
+function renderTrophies() {
+  const s = obj.reglages;
+  if (!s) return;
+  const today = todayKey();
+  const total = O.compute(s, obj.sorties, today).total;
+  const all = O.trophies(s);
+  const dates = O.unlockDates(s, obj.sorties, today);
+  const unlocked = all.filter(t => total >= t.km).length;
+  $('#o-tr-sum').textContent = unlocked + ' trophée' + (unlocked > 1 ? 's' : '') + ' sur ' + all.length + ' en ' + s.annee;
+
+  let html = '<h3 class="o-tr-h">Spéciaux</h3>';
+  TR_SECTIONS.forEach(([cat, label]) => {
+    const list = all.filter(t => t.cat === cat || (cat === 'symbole' && t.cat === 'objectif'));
+    const n = list.filter(t => total >= t.km).length;
+    html += '<h4 class="o-tr-sub"><span>' + label + '</span><span>' + n + ' / ' + list.length + '</span></h4><div class="o-badges">';
+    html += list.map(t => {
+      const st = trophyState(t, total, dates);
+      const secret = t.cat === 'secret' && !st.on;
+      return '<button type="button" class="o-badge' + (st.on ? ' on' : '') + (secret ? ' secret' : '') + '" data-tr="' + t.id + '">'
+        + '<span class="o-badge-icon" aria-hidden="true">' + (secret ? '?' : t.icon) + '</span>'
+        + '<b>' + (secret ? 'Secret' : t.name) + '</b>'
+        + '<span class="o-badge-sub">' + (secret ? '' : fmtKm(t.km) + ' km') + (st.sub && !secret ? '<br>' + st.sub : '') + '</span></button>';
+    }).join('');
+    html += '</div>';
+  });
+
+  const reg = all.filter(t => t.cat === 'regulier');
+  const next = reg.find(t => total < t.km);
+  html += '<h3 class="o-tr-h">Réguliers <small>tous les ' + (reg[1] ? fmtKm(reg[1].km - reg[0].km) : '') + ' km</small></h3><div class="o-regs">'
+    + reg.map(t => '<button type="button" class="o-reg' + (total >= t.km ? ' on' : t === next ? ' next' : '') + '" data-tr="' + t.id + '">' + fmtKm(t.km) + '</button>').join('')
+    + '</div>';
+  $('#o-trophies').innerHTML = html;
+}
+
+// Toucher un trophée : lire sa phrase
+function showTrophy(id) {
+  const s = obj.reglages;
+  const t = O.trophies(s).find(x => x.id === id);
+  if (!t) return;
+  const today = todayKey();
+  const total = O.compute(s, obj.sorties, today).total;
+  const st = trophyState(t, total, O.unlockDates(s, obj.sorties, today));
+  if (t.cat === 'secret' && !st.on) {
+    ask({ title: 'Trophée secret', text: 'Continue de courir pour le découvrir…', buttons: [{ label: 'OK', value: 'ok', style: 'primary' }] });
+    return;
+  }
+  ask({
+    title: t.icon + ' ' + t.name,
+    text: t.text + '\n\n' + (st.on ? (st.sub === 'au départ' ? 'Déjà dans ton total de départ' : 'Débloqué' + (st.sub ? ' ' + st.sub : '')) : 'Pas encore : ' + st.sub),
+    buttons: [{ label: 'OK', value: 'ok', style: 'primary' }],
+  });
 }
 
 // La carte reste affichée jusqu'à ce qu'elle touche « Continuer »
@@ -547,8 +637,7 @@ function welcomeNext() {
   if (wStep < 3) return welcomeStep(wStep + 1);
 
   obj.reglages = res.reglages;
-  // les paliers déjà dépassés au départ ne sont pas fêtés
-  obj.paliersFetes = O.milestones(res.reglages.objectif).filter(m => m <= res.reglages.totalDepart);
+  obj.paliersFetes = []; // (les trophées déjà dans le total de départ ne sont jamais fêtés)
   objSave();
   wStep = 1;
   objRender();
@@ -585,10 +674,6 @@ function objSaveSettings(e) {
   if (res.erreur) return objError(res.erreur, $(res.el));
   document.activeElement && document.activeElement.blur();
   obj.reglages = res.reglages;
-  // pas de fête pour les paliers déjà inclus dans le total de départ
-  O.milestones(obj.reglages.objectif).forEach(m => {
-    if (m <= obj.reglages.totalDepart && !obj.paliersFetes.includes(m)) obj.paliersFetes.push(m);
-  });
   objSave();
   objRender({ animate: true });
   toast('Réglages enregistrés');
@@ -631,6 +716,10 @@ function objStart() {
     if (b) objEditRun(b.dataset.id);
   }));
   $('#o-all').addEventListener('click', () => showScreen('obj-runs'));
+  $('#o-trophies').addEventListener('click', e => {
+    const b = e.target.closest('[data-tr]');
+    if (b) showTrophy(b.dataset.tr);
+  });
   // Entrée dans « Modifier la sortie » = Enregistrer (et pas Annuler)
   ['#dialog-km', '#dialog-date'].forEach(sel => $(sel).addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;

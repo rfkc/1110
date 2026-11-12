@@ -762,6 +762,69 @@ dialog[open] { animation: pop .25s ease-out; }
 .o-party.big .o-party-title { font-size: 96px; }
 .o-party.big .o-party-text { font-size: 18px; color: var(--ink); }
 
+/* Plusieurs trophées sur la même carte */
+.o-party-icon { margin: 8px 0 0; font-size: 48px; line-height: 1.1; }
+.o-party.big .o-party-icon { font-size: 64px; }
+.o-party-card .o-party-title { font-size: 46px; }
+.o-party.big .o-party-card .o-party-title { font-size: 88px; }
+.o-party-list {
+  list-style: none;
+  margin: -8px 0 20px; padding: 6px 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  text-align: left;
+}
+.o-party-list li {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--brd);
+  font-size: 14px;
+}
+.o-party-list li:last-child { border-bottom: 0; }
+.o-party-list li span { font-size: 20px; width: 24px; text-align: center; }
+.o-party-list li b { flex: 1; font-weight: 700; }
+.o-party-list li em { font-style: normal; color: var(--mute); font-weight: 600; white-space: nowrap; }
+.o-party-list li.more { justify-content: center; color: var(--mute); font-weight: 600; }
+
+/* ---------- Onglet Trophées ---------- */
+.o-tr-h { display: flex; align-items: baseline; gap: 8px; }
+.o-tr-h small { font-family: 'Quicksand', sans-serif; font-size: 13px; color: var(--mute); font-weight: 600; }
+.o-tr-sub { display: flex; justify-content: space-between; margin: 16px 4px 8px; font-size: 13px; font-weight: 700; color: var(--mute); }
+.o-badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.o-badge {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 132px;
+  padding: 12px 6px 10px;
+  border: 0; border-radius: 18px;
+  background: var(--card);
+  text-align: center;
+  transition: transform .15s;
+}
+.o-badge:active { transform: scale(.96); }
+.o-badge-icon {
+  display: grid; place-items: center;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--track);
+  font-size: 26px;
+  filter: grayscale(1); opacity: .45;
+}
+.o-badge.on .o-badge-icon { background: color-mix(in srgb, var(--soft) 55%, transparent); filter: none; opacity: 1; box-shadow: 0 0 0 2px var(--btn); }
+.o-badge.secret .o-badge-icon { filter: none; opacity: .6; font: 700 22px 'Fraunces', serif; color: var(--mute); }
+.o-badge b { font-size: 12.5px; font-weight: 700; line-height: 1.2; color: var(--ink); opacity: .55; }
+.o-badge.on b { opacity: 1; }
+.o-badge-sub { font-size: 11px; font-weight: 600; color: var(--mute); line-height: 1.35; }
+.o-regs { display: flex; flex-wrap: wrap; gap: 6px; }
+.o-reg {
+  min-width: 52px; min-height: 36px; padding: 0 10px;
+  border: 1.5px dashed var(--soft); border-radius: 999px;
+  background: none; color: var(--mute);
+  font-size: 13px; font-weight: 700;
+}
+.o-reg.on { border: 0; background: var(--btn); color: var(--on-btn); }
+.o-reg.next { border-style: solid; border-color: var(--btn); color: var(--ink); }
+#dialog-text { white-space: pre-line; }
+
 @keyframes o-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes o-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes o-flash { from { background: color-mix(in srgb, var(--soft) 60%, transparent); } to { background: transparent; } }
