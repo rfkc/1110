@@ -477,7 +477,7 @@ function celebrate(m, r) {
   $('#o-party-kicker').textContent = big ? 'Objectif ' + s.annee : 'Palier';
   $('#o-party-title').textContent = fmtKm(m) + ' km';
   $('#o-party-text').textContent = big
-    ? 'Tu l’as fait ! ' + fmtKm(s.objectif) + ' km en ' + s.annee + '. Chaque sortie compte, et tu les as toutes faites.'
+    ? 'Tu l’as fait ! ' + fmtKm(s.objectif) + ' km en ' + s.annee + '. Chaque sortie compte, et tu les as toutes faites. Gros bisous ma vie ♥'
     : 'Plus que ' + fmtKm(Math.max(0, s.objectif - r.total)) + ' km. Continue comme ça !';
   box.hidden = false;
   rainHearts(big ? 90 : 28);
